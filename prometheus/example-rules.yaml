@@ -1,0 +1,106 @@
+groups:
+
+- name: ProxmoxBackupServer.rules
+
+  rules:
+
+    - alert: ProxmoxBackupHostDown
+      expr: 'absent(pbs_available)'
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: Proxmox Backup Server down
+        description: "Proxmox Backup Server {{ $labels.instance }} is not available."
+
+    - alert: ProxmoxBackupSnapshotVerifyFailed
+      expr: 'sum by (vm_id) (max_over_time(pbs_snapshot_vm_last_verify[2d]) and pbs_snapshot_vm_count > 1) == 0'
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: Last verified Proxmox snapshot older than 2 days
+        description: "Last verified snapshot of vm {{ $labels.vm_name }} is older than 2 days."
+
+    - alert: ProxmoxBackupSnapshotOutdated
+      expr: '(time() - pbs_snapshot_vm_last_timestamp) / 3600 / 24 > 2'
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: Last snapshot of vm is older than 2 days
+        description: "Last snapshot of vm {{ $labels.vm_name }} is older than 2 days."
+
+    - alert: ProxmoxBackupPoolDiskOutOfSpace
+      expr: 'pbs_used / pbs_size * 100 > 90'
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: Proxmox datastore out of space (datastore {{ $labels.datastore }})
+        description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}"
+
+    - alert: ProxmoxBackupPoolDiskFillingUp
+      annotations:
+        description: Based on recent sampling, the datastore {{ $.labels.datastore }} is expected to fill up withing four days. Currently {{ $value | humanizePercentage }} is available.
+        summary: Proxmox datastore is filling up.
+      expr: pbs_used / pbs_size > 0.6 and pbs_used > 0 and predict_linear(pbs_available[6h], 4 * 24 * 3600) < 0
+      for: 30m
+      labels:
+        severity: warning
+
+    - alert: ProxmoxBackupRootDiskOutOfSpace
+      expr: 'pbs_host_disk_used / pbs_host_disk_total * 100 > 90'
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: Proxmox root disk out of space (instance {{ $labels.instance }})
+        description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}"
+
+    - alert: ProxmoxBackupRootDiskFillingUp
+      annotations:
+        description: Based on recent sampling, the root disk {{ $.labels.instance }} is expected to fill up withing four days. Currently {{ $value | humanizePercentage }} is available.
+        summary: Proxmox root disk is filling up.
+      expr: pbs_host_disk_used / pbs_host_disk_total > 0.6 and pbs_host_disk_used > 0 and
+        predict_linear(pbs_host_disk_available[6h], 4 * 24 * 3600) < 0
+      for: 30m
+      labels:
+        severity: warning
+
+    - alert: ProxmoxBackupHostOutOfMemory
+      expr: 'pbs_host_memory_used / (pbs_host_memory_used + pbs_host_memory_free) * 100 > 90'
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: Proxmox host out of memory (instance {{ $labels.instance }})
+        description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+    - alert: ProxmoxBackupHostSwapIsFillingUp
+      expr: 'pbs_host_swap_used / (pbs_host_swap_used + pbs_host_swap_free) * 100 > 80'
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: Proxmox host swap is filling up  (instance {{ $labels.instance }})
+        description: "Swap is filling up (> 80%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+    - alert: ProxmoxBackupHostHighCpuLoad
+      expr: 'avg_over_time(pbs_host_cpu_usage[2m]) > 0.8'
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: Host high CPU load (id {{ $labels.id }})
+
+        description: "CPU load is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+    - alert: ProxmoxBackupHostHighIowait
+      expr: 'avg by (instance) (rate(pbs_host_io_wait[5m]) * 100) > 10'
+      for: 0m
+      labels:
+        severity: warning
+      annotations:
+        summary: Host CPU high iowait (instance {{ $labels.instance }})
+        description: "CPU iowait > 10%. A high iowait means that you are disk or network bound.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"

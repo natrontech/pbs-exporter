@@ -1,0 +1,30 @@
+scrape_configs:
+- job_name: 'pbs-exporter'
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+  - targets:
+    - 'pbs-exporter:9101'
+
+# example with relablings to have the host name (e.g. host-001) as a metric label
+- job_name: 'pbs-exporter-relabel'
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+  - targets:
+    - 'pbs-exporter@host-001'
+  relabel_configs:
+  - source_labels: [ __address__ ]
+    regex: '.*@(.*)'
+    replacement: ${1}
+    target_label: instance
+  - source_labels: [ __address__ ]
+    regex: '(.*)@.*'
+    replacement: ${1}:9101
+    target_label: __address__
