@@ -60,17 +60,17 @@ var (
 	available = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "available"),
 		"The available bytes of the underlying storage.",
-		nil, nil,
+		[]string{"datastore"}, nil,
 	)
 	size = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "size"),
 		"The size of the underlying storage in bytes.",
-		nil, nil,
+		[]string{"datastore"}, nil,
 	)
 	used = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "used"),
 		"The used bytes of the underlying storage.",
-		nil, nil,
+		[]string{"datastore"}, nil,
 	)
 	snapshot_count = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "snapshot_count"),
@@ -436,13 +436,13 @@ func (e *Exporter) getDatastoreMetric(datastore Datastore, ch chan<- prometheus.
 
 	// set datastore metrics
 	ch <- prometheus.MustNewConstMetric(
-		available, prometheus.GaugeValue, float64(datastore.Avail),
+		available, prometheus.GaugeValue, float64(datastore.Avail), datastore.Store,
 	)
 	ch <- prometheus.MustNewConstMetric(
-		size, prometheus.GaugeValue, float64(datastore.Total),
+		size, prometheus.GaugeValue, float64(datastore.Total), datastore.Store,
 	)
 	ch <- prometheus.MustNewConstMetric(
-		used, prometheus.GaugeValue, float64(datastore.Used),
+		used, prometheus.GaugeValue, float64(datastore.Used), datastore.Store,
 	)
 
 	// get namespaces of datastore
