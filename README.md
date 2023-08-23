@@ -39,6 +39,9 @@ Metrics are retrieved using the [Proxmox Backup Server API](https://pbs.proxmox.
 | pbs_host_disk_used | The used disk of the local root disk in bytes. | |
 | pbs_host_uptime | The uptime of the host. | |
 | pbs_host_io_wait | The io wait of the host. | |
+| pbs_host_load1 | The load for 1 minute of the host. | |
+| pbs_host_load5 | The load for 5 minutes of the host. | |
+| pbs_host_load15 | The load 15 minutes of the host. | |
 
 ## Flags / Environment Variables
 
