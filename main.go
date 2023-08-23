@@ -142,6 +142,21 @@ var (
 		"The io wait of the host.",
 		nil, nil,
 	)
+	host_load1 = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "host_load1"),
+		"The load for 1 minute of the host.",
+		nil, nil,
+	)
+	host_load5 = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "host_load5"),
+		"The load for 5 minutes of the host.",
+		nil, nil,
+	)
+	host_load15 = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "host_load15"),
+		"The load for 15 minutes of the host.",
+		nil, nil,
+	)
 )
 
 type DatastoreResponse struct {
@@ -192,8 +207,9 @@ type HostResponse struct {
 			Total int64 `json:"total"`
 			Used  int64 `json:"used"`
 		} `json:"root"`
-		Uptime int64   `json:"uptime"`
-		Wait   float64 `json:"wait"`
+		Load   []float64 `json:"loadavg"`
+		Uptime int64     `json:"uptime"`
+		Wait   float64   `json:"wait"`
 	} `json:"data"`
 }
 
@@ -228,6 +244,9 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- host_disk_used
 	ch <- host_uptime
 	ch <- host_io_wait
+	ch <- host_load1
+	ch <- host_load5
+	ch <- host_load15
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
@@ -392,6 +411,15 @@ func (e *Exporter) getNodeMetrics(ch chan<- prometheus.Metric) error {
 	)
 	ch <- prometheus.MustNewConstMetric(
 		host_io_wait, prometheus.GaugeValue, float64(response.Data.Wait),
+	)
+	ch <- prometheus.MustNewConstMetric(
+		host_load1, prometheus.GaugeValue, float64(response.Data.Load[0]),
+	)
+	ch <- prometheus.MustNewConstMetric(
+		host_load5, prometheus.GaugeValue, float64(response.Data.Load[1]),
+	)
+	ch <- prometheus.MustNewConstMetric(
+		host_load15, prometheus.GaugeValue, float64(response.Data.Load[2]),
 	)
 
 	return nil
