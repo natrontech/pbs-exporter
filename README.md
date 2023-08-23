@@ -22,9 +22,9 @@ Metrics are retrieved using the [Proxmox Backup Server API](https://pbs.proxmox.
 | Metric | Meaning | Labels |
 | ------ | ------- | ------ |
 | pbs_up | Was the last query of Proxmox Backup Server successful? | |
-| pbs_available | The available bytes of the underlying storage. | |
-| pbs_size | The size of the underlying storage in bytes. | |
-| pbs_used | The used bytes of the underlying storage. | |
+| pbs_available | The available bytes of the underlying storage. | `datastore` |
+| pbs_size | The size of the underlying storage in bytes. | `datastore` |
+| pbs_used | The used bytes of the underlying storage. | `datastore` |
 | pbs_snapshot_count | The total number of backups. | `namespace` |
 | pbs_snapshot_vm_count | The total number of backups per VM. | `namespace`, `vm_id` |
 | pbs_host_cpu_usage | The CPU usage of the host. | |
