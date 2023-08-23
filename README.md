@@ -25,8 +25,10 @@ Metrics are retrieved using the [Proxmox Backup Server API](https://pbs.proxmox.
 | pbs_available | The available bytes of the underlying storage. | `datastore` |
 | pbs_size | The size of the underlying storage in bytes. | `datastore` |
 | pbs_used | The used bytes of the underlying storage. | `datastore` |
-| pbs_snapshot_count | The total number of backups. | `namespace` |
-| pbs_snapshot_vm_count | The total number of backups per VM. | `namespace`, `vm_id` |
+| pbs_snapshot_count | The total number of backups. | `datastore`, `namespace` |
+| pbs_snapshot_vm_count | The total number of backups per VM. | `datastore`, `namespace`, `vm_id` |
+| pbs_snapshot_vm_last_timestamp | The timestamp of the last backup of a VM. | `datastore`, `namespace`, `vm_id` |
+| pbs_snapshot_vm_last_verify | The verify status of the last backup of a VM. | `datastore`, `namespace`, `vm_id` |
 | pbs_host_cpu_usage | The CPU usage of the host. | |
 | pbs_host_memory_free | The free memory of the host. | |
 | pbs_host_memory_total | The total memory of the host. | |
@@ -34,7 +36,7 @@ Metrics are retrieved using the [Proxmox Backup Server API](https://pbs.proxmox.
 | pbs_host_swap_free | The free swap of the host. | |
 | pbs_host_swap_total | The total swap of the host. | |
 | pbs_host_swap_used | The used swap of the host. | |
-| pbs_host_available_free | The available disk of the local root disk in bytes. | |
+| pbs_host_disk_available | The available disk of the local root disk in bytes. | |
 | pbs_host_disk_total | The total disk of the local root disk in bytes. | |
 | pbs_host_disk_used | The used disk of the local root disk in bytes. | |
 | pbs_host_uptime | The uptime of the host. | |
