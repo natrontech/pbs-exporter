@@ -80,17 +80,17 @@ var (
 	snapshot_vm_count = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_count"),
 		"The total number of backups per VM.",
-		[]string{"datastore", "namespace", "vm_id"}, nil,
+		[]string{"datastore", "namespace", "vm_id", "vm_name"}, nil,
 	)
 	snapshot_vm_last_timestamp = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_last_timestamp"),
 		"The timestamp of the last backup of a VM.",
-		[]string{"datastore", "namespace", "vm_id"}, nil,
+		[]string{"datastore", "namespace", "vm_id", "vm_name"}, nil,
 	)
 	snapshot_vm_last_verify = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_last_verify"),
 		"The verify status of the last backup of a VM.",
-		[]string{"datastore", "namespace", "vm_id"}, nil,
+		[]string{"datastore", "namespace", "vm_id", "vm_name"}, nil,
 	)
 	host_cpu_usage = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "host_cpu_usage"),
@@ -197,6 +197,7 @@ type SnapshotResponse struct {
 	Data []struct {
 		BackupID     string `json:"backup-id"`
 		BackupTime   int64  `json:"backup-time"`
+		VMName       string `json:"comment"`
 		Verification struct {
 			State string `json:"state"`
 		} `json:"verification"`
@@ -293,7 +294,7 @@ func (e *Exporter) collectFromAPI(ch chan<- prometheus.Metric) error {
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: Request URL: %s", req.URL)
-		log.Printf("DEBUG: Request Header: %s", req.Header)
+		//log.Printf("DEBUG: Request Header: %s", vmID)
 	}
 
 	// make request and show output
@@ -358,7 +359,7 @@ func (e *Exporter) getNodeMetrics(ch chan<- prometheus.Metric) error {
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: Request URL: %s", req.URL)
-		log.Printf("DEBUG: Request Header: %s", req.Header)
+		//log.Printf("DEBUG: Request Header: %s", vmID)
 	}
 
 	// make request and show output
@@ -473,7 +474,7 @@ func (e *Exporter) getDatastoreMetric(datastore Datastore, ch chan<- prometheus.
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: --Request URL: %s", req.URL)
-		log.Printf("DEBUG: --Request Header: %s", req.Header)
+		//log.Printf("DEBUG: --Request Header: %s", vmID)
 	}
 
 	// make request and show output
@@ -540,7 +541,7 @@ func (e *Exporter) getNamespaceMetric(datastore string, namespace string, ch cha
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: ----Request URL: %s", req.URL)
-		log.Printf("DEBUG: ----Request Header: %s", req.Header)
+		//log.Printf("DEBUG: ----Request Header: %s", vmID)
 	}
 
 	// make request and show output
@@ -579,21 +580,23 @@ func (e *Exporter) getNamespaceMetric(datastore string, namespace string, ch cha
 	)
 
 	// set snapshot metrics per vm
+	vmNameMapping := make(map[string]string)
 	vmCount := make(map[string]int)
 	for _, snapshot := range response.Data {
 		// get vm name from snapshot
-		vmName := snapshot.BackupID
-		vmCount[vmName]++
+		vmID := snapshot.BackupID
+		vmNameMapping[vmID] = snapshot.VMName
+		vmCount[vmID]++
 	}
 
 	// set snapshot metrics per vm
-	for vmName, count := range vmCount {
+	for vmID, count := range vmCount {
 		ch <- prometheus.MustNewConstMetric(
-			snapshot_vm_count, prometheus.GaugeValue, float64(count), datastore, namespace, vmName,
+			snapshot_vm_count, prometheus.GaugeValue, float64(count), datastore, namespace, vmID, vmNameMapping[vmID],
 		)
 
 		// find last snapshot with backupID
-		lastTimeStamp, lastVerify, err := findLastSnapshotWithBackupID(response, vmName)
+		lastTimeStamp, lastVerify, err := findLastSnapshotWithBackupID(response, vmID)
 		if err != nil {
 			return err
 		}
@@ -602,10 +605,10 @@ func (e *Exporter) getNamespaceMetric(datastore string, namespace string, ch cha
 			lastVerifyBool = 1
 		}
 		ch <- prometheus.MustNewConstMetric(
-			snapshot_vm_last_timestamp, prometheus.GaugeValue, float64(lastTimeStamp), datastore, namespace, vmName,
+			snapshot_vm_last_timestamp, prometheus.GaugeValue, float64(lastTimeStamp), datastore, namespace, vmID, vmNameMapping[vmID],
 		)
 		ch <- prometheus.MustNewConstMetric(
-			snapshot_vm_last_verify, prometheus.GaugeValue, float64(lastVerifyBool), datastore, namespace, vmName,
+			snapshot_vm_last_verify, prometheus.GaugeValue, float64(lastVerifyBool), datastore, namespace, vmID, vmNameMapping[vmID],
 		)
 	}
 
