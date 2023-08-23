@@ -26,9 +26,9 @@ Metrics are retrieved using the [Proxmox Backup Server API](https://pbs.proxmox.
 | pbs_size | The size of the underlying storage in bytes. | `datastore` |
 | pbs_used | The used bytes of the underlying storage. | `datastore` |
 | pbs_snapshot_count | The total number of backups. | `datastore`, `namespace` |
-| pbs_snapshot_vm_count | The total number of backups per VM. | `datastore`, `namespace`, `vm_id` |
-| pbs_snapshot_vm_last_timestamp | The timestamp of the last backup of a VM. | `datastore`, `namespace`, `vm_id` |
-| pbs_snapshot_vm_last_verify | The verify status of the last backup of a VM. | `datastore`, `namespace`, `vm_id` |
+| pbs_snapshot_vm_count | The total number of backups per VM. | `datastore`, `namespace`, `vm_id`, `vm_name` |
+| pbs_snapshot_vm_last_timestamp | The timestamp of the last backup of a VM. | `datastore`, `namespace`, `vm_id`, `vm_name` |
+| pbs_snapshot_vm_last_verify | The verify status of the last backup of a VM. | `datastore`, `namespace`, `vm_id`, `vm_name` |
 | pbs_host_cpu_usage | The CPU usage of the host. | |
 | pbs_host_memory_free | The free memory of the host. | |
 | pbs_host_memory_total | The total memory of the host. | |
