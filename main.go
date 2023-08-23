@@ -294,7 +294,7 @@ func (e *Exporter) collectFromAPI(ch chan<- prometheus.Metric) error {
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: Request URL: %s", req.URL)
-		log.Printf("DEBUG: Request Header: %s", req.Header)
+		//log.Printf("DEBUG: Request Header: %s", vmID)
 	}
 
 	// make request and show output
@@ -359,7 +359,7 @@ func (e *Exporter) getNodeMetrics(ch chan<- prometheus.Metric) error {
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: Request URL: %s", req.URL)
-		log.Printf("DEBUG: Request Header: %s", req.Header)
+		//log.Printf("DEBUG: Request Header: %s", vmID)
 	}
 
 	// make request and show output
@@ -474,7 +474,7 @@ func (e *Exporter) getDatastoreMetric(datastore Datastore, ch chan<- prometheus.
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: --Request URL: %s", req.URL)
-		log.Printf("DEBUG: --Request Header: %s", req.Header)
+		//log.Printf("DEBUG: --Request Header: %s", vmID)
 	}
 
 	// make request and show output
@@ -541,7 +541,7 @@ func (e *Exporter) getNamespaceMetric(datastore string, namespace string, ch cha
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: ----Request URL: %s", req.URL)
-		log.Printf("DEBUG: ----Request Header: %s", req.Header)
+		//log.Printf("DEBUG: ----Request Header: %s", vmID)
 	}
 
 	// make request and show output
