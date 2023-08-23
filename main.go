@@ -75,12 +75,22 @@ var (
 	snapshot_count = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "snapshot_count"),
 		"The total number of backups.",
-		[]string{"namespace"}, nil,
+		[]string{"datastore", "namespace"}, nil,
 	)
 	snapshot_vm_count = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_count"),
 		"The total number of backups per VM.",
-		[]string{"namespace", "vm_id"}, nil,
+		[]string{"datastore", "namespace", "vm_id"}, nil,
+	)
+	snapshot_vm_last_timestamp = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_last_timestamp"),
+		"The timestamp of the last backup of a VM.",
+		[]string{"datastore", "namespace", "vm_id"}, nil,
+	)
+	snapshot_vm_last_verify = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_last_verify"),
+		"The verify status of the last backup of a VM.",
+		[]string{"datastore", "namespace", "vm_id"}, nil,
 	)
 	host_cpu_usage = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "host_cpu_usage"),
@@ -118,7 +128,7 @@ var (
 		nil, nil,
 	)
 	host_disk_available = prometheus.NewDesc(
-		prometheus.BuildFQName(promNamespace, "", "host_available_free"),
+		prometheus.BuildFQName(promNamespace, "", "host_disk_available"),
 		"The available disk of the local root disk in bytes.",
 		nil, nil,
 	)
@@ -185,7 +195,11 @@ type NamespaceResponse struct {
 
 type SnapshotResponse struct {
 	Data []struct {
-		BackupID string `json:"backup-id"`
+		BackupID     string `json:"backup-id"`
+		BackupTime   int64  `json:"backup-time"`
+		Verification struct {
+			State string `json:"state"`
+		} `json:"verification"`
 	} `json:"data"`
 }
 
@@ -232,6 +246,8 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- used
 	ch <- snapshot_count
 	ch <- snapshot_vm_count
+	ch <- snapshot_vm_last_timestamp
+	ch <- snapshot_vm_last_verify
 	ch <- host_cpu_usage
 	ch <- host_memory_free
 	ch <- host_memory_total
@@ -559,7 +575,7 @@ func (e *Exporter) getNamespaceMetric(datastore string, namespace string, ch cha
 
 	// set total snapshot metrics
 	ch <- prometheus.MustNewConstMetric(
-		snapshot_count, prometheus.GaugeValue, float64(len(response.Data)), namespace,
+		snapshot_count, prometheus.GaugeValue, float64(len(response.Data)), datastore, namespace,
 	)
 
 	// set snapshot metrics per vm
@@ -573,11 +589,48 @@ func (e *Exporter) getNamespaceMetric(datastore string, namespace string, ch cha
 	// set snapshot metrics per vm
 	for vmName, count := range vmCount {
 		ch <- prometheus.MustNewConstMetric(
-			snapshot_vm_count, prometheus.GaugeValue, float64(count), namespace, vmName,
+			snapshot_vm_count, prometheus.GaugeValue, float64(count), datastore, namespace, vmName,
+		)
+
+		// find last snapshot with backupID
+		lastTimeStamp, lastVerify, err := findLastSnapshotWithBackupID(response, vmName)
+		if err != nil {
+			return err
+		}
+		lastVerifyBool := 0
+		if lastVerify == "ok" {
+			lastVerifyBool = 1
+		}
+		ch <- prometheus.MustNewConstMetric(
+			snapshot_vm_last_timestamp, prometheus.GaugeValue, float64(lastTimeStamp), datastore, namespace, vmName,
+		)
+		ch <- prometheus.MustNewConstMetric(
+			snapshot_vm_last_verify, prometheus.GaugeValue, float64(lastVerifyBool), datastore, namespace, vmName,
 		)
 	}
 
 	return nil
+}
+
+func findLastSnapshotWithBackupID(response SnapshotResponse, backupID string) (int64, string, error) {
+	// find biggest value of backupTime of backupID in response array
+	var lastTimeStamp int64
+	var lastVerify string
+	for _, snapshot := range response.Data {
+		if snapshot.BackupID == backupID {
+			if snapshot.BackupTime > lastTimeStamp {
+				lastTimeStamp = snapshot.BackupTime
+				lastVerify = snapshot.Verification.State
+			}
+		}
+	}
+
+	// if lastTimeStamp is still 0, no snapshot was found
+	if lastTimeStamp != 0 {
+		return lastTimeStamp, lastVerify, nil
+	}
+
+	return 0, "", fmt.Errorf("ERROR: No snapshot found with backupID %s", backupID)
 }
 
 func main() {
