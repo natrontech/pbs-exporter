@@ -493,7 +493,7 @@ func (e *Exporter) getDatastoreMetric(datastore Datastore, ch chan<- prometheus.
 	// check if status code is 200
 	if resp.StatusCode != 200 {
 		if resp.StatusCode == 400 {
-			// check if
+			// check if datastore is being deleted
 			isBeingDeleted, err := regexp.MatchString("(?i)datastore is being deleted", string(body[:]))
 			if err != nil {
 				return err
