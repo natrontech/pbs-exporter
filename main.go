@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/tls"
 	"encoding/json"
 	"flag"
@@ -232,6 +233,24 @@ type HostResponse struct {
 type Exporter struct {
 	endpoint            string
 	authorizationHeader string
+}
+
+func ReadSecretFile(secretfilename string) string {
+	file, err := os.Open(secretfilename)
+	// flag to check the file format
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Close the file
+	defer func() {
+		if err = file.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	// Read the first line
+	line := bufio.NewScanner(file)
+	line.Scan()
+	return line.Text()
 }
 
 func NewExporter(endpoint string, username string, apitoken string, apitokenname string) *Exporter {
@@ -660,12 +679,24 @@ func main() {
 	}
 	if os.Getenv("PBS_USERNAME") != "" {
 		*username = os.Getenv("PBS_USERNAME")
+	} else {
+		if os.Getenv("PBS_USERNAME_FILE") != "" {
+			*username = ReadSecretFile(os.Getenv("PBS_USERNAME_FILE"))
+		}
 	}
 	if os.Getenv("PBS_API_TOKEN_NAME") != "" {
 		*apitokenname = os.Getenv("PBS_API_TOKEN_NAME")
+	} else {
+		if os.Getenv("PBS_API_TOKEN_NAME_FILE") != "" {
+			*apitokenname = ReadSecretFile(os.Getenv("PBS_API_TOKEN_NAME_FILE"))
+		}
 	}
 	if os.Getenv("PBS_API_TOKEN") != "" {
 		*apitoken = os.Getenv("PBS_API_TOKEN")
+	} else {
+		if os.Getenv("PBS_API_TOKEN_FILE") != "" {
+			*apitoken = ReadSecretFile(os.Getenv("PBS_API_TOKEN_FILE"))
+		}
 	}
 	if os.Getenv("PBS_TIMEOUT") != "" {
 		*timeout = os.Getenv("PBS_TIMEOUT")
