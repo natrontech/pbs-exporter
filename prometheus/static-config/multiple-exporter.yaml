@@ -1,0 +1,18 @@
+# Use Case: multiple Proxmox Backup Server, they have different authentication user/token
+#           configure multiple authentication for each exporter instance
+#           important: set env PBS_ENDPOINT per exporter instance!
+#
+# Setup:
+# - first exporter instance: pbs-exporter-1
+# - second exporter instance: pbs-exporter-2
+
+- job_name: 'pbs-exporter'
+  honor_timestamps: true
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  static_configs:
+  - targets:
+    - 'pbs-exporter-1:9101' # PBS_ENDPOINT set to target 1
+    - 'pbs-exporter-2:9101' # PBS_ENDPOINT set to target 2

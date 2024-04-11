@@ -1,3 +1,9 @@
+# Use Case: single Proxmox Backup Server
+#
+# Setup:
+# - exporter instance: pbs-exporter:9101
+# - PBS target set in env PBS_ENDPOINT
+
 scrape_configs:
 - job_name: 'pbs-exporter'
   honor_timestamps: true
@@ -7,9 +13,10 @@ scrape_configs:
   scheme: http
   static_configs:
   - targets:
-    - 'pbs-exporter:9101'
+    - 'pbs-exporter:9101' # PBS_ENDPOINT set to target
 
-# example with relablings to have the host name (e.g. host-001) as a metric label
+
+# example with relablings to have the host name (e.g. host-001) as metric label "instance"
 - job_name: 'pbs-exporter-relabel'
   honor_timestamps: true
   scrape_interval: 15s
@@ -18,7 +25,7 @@ scrape_configs:
   scheme: http
   static_configs:
   - targets:
-    - 'pbs-exporter@host-001'
+    - 'pbs-exporter@host-001' # PBS_ENDPOINT set to target
   relabel_configs:
   - source_labels: [ __address__ ]
     regex: '.*@(.*)'

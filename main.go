@@ -33,7 +33,7 @@ var (
 	}
 
 	// Flags
-	endpoint = flag.String("pbs.endpoint", "http://localhost:8007",
+	endpoint = flag.String("pbs.endpoint", "",
 		"Proxmox Backup Server endpoint")
 	username = flag.String("pbs.username", "root@pam",
 		"Proxmox Backup Server username")
@@ -710,15 +710,39 @@ func main() {
 		log.Printf("DEBUG: Using listen address: %s", *listenAddress)
 	}
 
-	// register exporter
-	exporter := NewExporter(*endpoint, *username, *apitoken, *apitokenname)
-	prometheus.MustRegister(exporter)
-	log.Printf("INFO: Using connection endpoint: %s", *endpoint)
+	if *endpoint != "" {
+		log.Printf("INFO: Using fix connection endpoint: %s", *endpoint)
+	}
 	log.Printf("INFO: Listening on: %s", *listenAddress)
 	log.Printf("INFO: Metrics path: %s", *metricsPath)
 
 	// start http server
-	http.Handle(*metricsPath, promhttp.Handler())
+	http.HandleFunc(*metricsPath, func(w http.ResponseWriter, r *http.Request) {
+		target := ""
+
+		// if endpoint was not set as flag or env variable, we try to get it from "target" query parameter
+		if *endpoint != "" {
+			target = *endpoint
+		} else {
+			target = r.URL.Query().Get("target")
+			if target == "" {
+				// if target is not set, we use the default
+				target = "http://localhost:8007"
+			}
+		}
+
+		// debug
+		if *loglevel == "debug" {
+			log.Printf("DEBUG: ----Using connection endpoint %s", target)
+		}
+
+		exporter := NewExporter(target, *username, *apitoken, *apitokenname)
+		prometheus.MustRegister(exporter)
+		promhttp.Handler().ServeHTTP(w, r) // Serve the metrics
+		prometheus.Unregister(exporter)    // Clean up after serving
+
+	})
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
             <head><title>PBS Exporter</title></head>
