@@ -65,6 +65,20 @@ You can use the following flags to configure the exporter. All flags can also be
 | `pbs.metrics-path`       | `PBS_METRICS_PATH`   | Path under which to expose metrics                   | `/metrics`                                             |
 | `pbs.web.listen-address` | `PBS_LISTEN_ADDRESS` | Address to listen on for web interface and telemetry | `:9101`                                                |
 
+### Docker secrets
+
+If you are using [Docker secrets](https://docs.docker.com/engine/swarm/secrets/), you can use the following environment variables to set the path to the secrets:
+
+| Environment Variable      | Description                     |
+| ------------------------- | ------------------------------- |
+| `PBS_API_TOKEN_FILE`      | Path to the API token file      |
+| `PBS_API_TOKEN_NAME_FILE` | Path to the API token name file |
+| `PBS_USERNAME_FILE`       | Path to the username file       |
+
+See an example of how to use Docker secrets with Docker Compose in the [docker-compose-secrets.yaml](docker-compose-secrets.yaml) file.
+
+The variables `PBS_API_TOKEN`, `PBS_API_TOKEN_NAME`, and `PBS_USERNAME` take precedence over the secret files.
+
 ## Multiple Proxmox Backup Servers
 
 If you want to monitor multiple Proxmox Backup Servers, you can use the `targets` parameter in the query string. Instead of setting the `pbs.endpoint` flag (or `PBS_ENDPOINT` env), you can use the `target` parameter in the query string to specify the Proxmox Backup Server to monitor. You would then use following URL to scrape metrics: `http://localhost:9101/metrics?target=http://10.10.10.10:8007`.
