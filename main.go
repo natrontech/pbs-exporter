@@ -764,14 +764,19 @@ func main() {
 
 		// debug
 		if *loglevel == "debug" {
-			log.Printf("DEBUG: ----Using connection endpoint %s", target)
+			log.Printf("DEBUG: Using connection endpoint %s", target)
 		}
 
 		exporter := NewExporter(target, *username, *apitoken, *apitokenname)
-		prometheus.MustRegister(exporter)
+
+		// catch if register of exporter fails
+		err := prometheus.Register(exporter)
+		if err != nil {
+			// if register fails, we log the error and return
+			log.Printf("ERROR: %s", err)
+		}
 		promhttp.Handler().ServeHTTP(w, r) // Serve the metrics
 		prometheus.Unregister(exporter)    // Clean up after serving
-
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

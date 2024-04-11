@@ -1,7 +1,11 @@
 # Use Case: multiple Proxmox Backup Server, all have the same authentication user/token
+#           important: env PBS_ENDPOINT not set!
 #
-# important: env PBS_ENDPOINT NOT SET!
-#
+# Setup:
+# - exporter instance: pbs-exporter:9101
+# - first PBS target: https://10.10.10.10:8007
+# - second PBS target: https://10.10.10.11:8007
+
 scrape_configs:
 - job_name: 'pbs-exporter'
   honor_timestamps: true
