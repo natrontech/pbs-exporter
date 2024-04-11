@@ -5,9 +5,10 @@ services:
     # image: ghcr.io/natrontech/pbs-exporter:latest
     container_name: pbs-exporter
     user: '65534'
-    restart: unless-stopped
+    restart: always
     ports:
       - "9101:9101"
     environment:
       - PBS_API_TOKEN=
       - PBS_ENDPOINT=https://pbs-server:8007
+      - PBS_INSECURE=false
