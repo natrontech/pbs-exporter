@@ -91,3 +91,7 @@ You find examples for Prometheus static configuration in the [prometheus/static-
 ## Node metrics
 
 According to the [api documentation](https://pbs.proxmox.com/docs/api-viewer/index.html#/nodes/{node}), we have to provide a node name (won't work with the node ip), but it seems to work with any name, so we just use "localhost" for the request. This setup is tested with one proxmox backup server host.
+
+## Supported versions
+
+We have only tested the exporter with Proxmox Backup Server version **2.X** (see [Proxmox Backup Server Roadmap](https://pbs.proxmox.com/wiki/index.php/Roadmap)). If you have already tested the exporter with a newer version, or have encountered problems, please let us know.
