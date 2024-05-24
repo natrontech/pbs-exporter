@@ -540,11 +540,6 @@ func (e *Exporter) getDatastoreMetric(datastore Datastore, ch chan<- prometheus.
 
 	// for each namespace collect metrics
 	for _, namespace := range response.Data {
-		// if namespace is empty skip
-		if namespace.Namespace == "" {
-			continue
-		}
-
 		err := e.getNamespaceMetric(datastore.Store, namespace.Namespace, ch)
 		if err != nil {
 			return err
