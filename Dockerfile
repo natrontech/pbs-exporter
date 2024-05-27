@@ -4,7 +4,7 @@ COPY go.mod go.sum main.go ./
 RUN go mod tidy \
   && CGO_ENABLED=0 go build
 
-FROM alpine:3.19 as runtime
+FROM alpine:3.20 as runtime
 
 LABEL maintainer="natrontech"
 
