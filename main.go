@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
@@ -30,7 +31,9 @@ var BuildTime = "unknown"
 
 var (
 	tr = &http.Transport{
-		TLSClientConfig: &tls.Config{},
+		TLSClientConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		},
 	}
 	client = &http.Client{
 		Transport: tr,
@@ -239,7 +242,7 @@ type Exporter struct {
 }
 
 func ReadSecretFile(secretfilename string) string {
-	file, err := os.Open(secretfilename)
+	file, err := os.Open(filepath.Clean(secretfilename))
 	// flag to check the file format
 	if err != nil {
 		log.Fatal(err)
@@ -327,7 +330,9 @@ func (e *Exporter) collectFromAPI(ch chan<- prometheus.Metric) error {
 	}
 
 	body, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
 	if err != nil {
 		return err
 	}
@@ -392,7 +397,9 @@ func (e *Exporter) getNodeMetrics(ch chan<- prometheus.Metric) error {
 	}
 
 	body, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
 	if err != nil {
 		return err
 	}
@@ -507,7 +514,9 @@ func (e *Exporter) getDatastoreMetric(datastore Datastore, ch chan<- prometheus.
 	}
 
 	body, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
 	if err != nil {
 		return err
 	}
@@ -580,7 +589,9 @@ func (e *Exporter) getNamespaceMetric(datastore string, namespace string, ch cha
 	}
 
 	body, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
 	if err != nil {
 		return err
 	}
@@ -792,5 +803,12 @@ func main() {
 			log.Printf("ERROR: Failed to write response: %s", err)
 		}
 	})
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+
+	server := &http.Server{
+		Addr:         *listenAddress,
+		Handler:      nil,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
+	}
+	log.Fatal(server.ListenAndServe())
 }
