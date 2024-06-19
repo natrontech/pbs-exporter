@@ -1,4 +1,4 @@
-module pbs-exporter
+module github.com/natrontech/pbs-exporter
 
 go 1.22.2
 

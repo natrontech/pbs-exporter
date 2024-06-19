@@ -1,0 +1,80 @@
+project_name: pbs-exporter
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: pbs-exporter
+    binary: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
+    # set for reproducible builds
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+      - arm64
+    goos:
+      - linux
+      - windows
+      - darwin
+    flags:
+      - -trimpath
+      - -tags="netgo"
+    ldflags:
+      - >-
+          -s
+          -w
+          -X main.Version={{ .Tag }}
+          -X main.Commit={{ .Commit }}
+          -X main.BuildTime={{ .Date }}
+
+archives:
+  - format: tar.gz
+    name_template: '{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    # use zip for windows archives
+    format_overrides:
+    - goos: windows
+      format: zip
+
+# create sboms for the archives
+sboms:
+  - artifacts: archive
+    args: ["$artifact", "--output", "cyclonedx-json=$document"]
+
+# create checksum file for the archives
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+# sign checksum file (cosign keyless)
+signs:
+  - cmd: cosign
+    args:
+    - "sign-blob"
+    - "--output-signature=${signature}"
+    - "${artifact}"
+    - "--output-certificate=${certificate}"
+    - "--yes"
+    artifacts: checksum
+    certificate: '${artifact}.pem'
+
+release:
+  # allow pre-release versions (e.g. by tagging with v1.0.0-rc0)
+  prerelease: auto
+  footer: |
+    **Full Changelog**: https://github.com/natrontech/{{ .ProjectName }}/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+    **Docker Images**
+    - `ghcr.io/natrontech/{{ .ProjectName }}:{{ .Version }}`
+    {{ if not .Prerelease }}- `ghcr.io/natrontech/{{ .ProjectName }}:latest`{{ end }}
+
+# github changelog for new release
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^test:'
+      - '^rebase:'
+      - Merge pull request

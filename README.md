@@ -1,15 +1,11 @@
 # Proxmox Backup Server Exporter
 
-<p align="center">
-    <a href="https://github.com/natrontech/pbs-exporter"><img
-    src="https://img.shields.io/github/license/natrontech/pbs-exporter"
-    alt="License"
-    /></a>
-    <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/natrontech/pbs-exporter/main?label=Go%20Version" />
-    <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/natrontech/pbs-exporter/ci.yml?label=CI" />
-    <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/natrontech/pbs-exporter/codeql.yml?label=CodeQL" />
-    <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/natrontech/pbs-exporter/docker-release.yml?label=Docker%20Release" />
-</p>
+[![license](https://img.shields.io/github/license/natrontech/pbs-exporter)](https://github.com/natrontech/pbs-exporter/blob/main/LICENSE)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/natrontech/pbs-exporter/badge)](https://securityscorecards.dev/viewer/?uri=github.com/natrontech/pbs-exporter)
+[![release](https://img.shields.io/github/v/release/natrontech/pbs-exporter)](https://github.com/natrontech/pbs-exporter/releases)
+[![go-version](https://img.shields.io/github/go-mod/go-version/natrontech/pbs-exporter)](https://github.com/natrontech/pbs-exporter/blob/main/go.mod)
+[![Go Report Card](https://goreportcard.com/badge/github.com/natrontech/pbs-exporter)](https://goreportcard.com/report/github.com/natrontech/pbs-exporter)
+[![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 ---
 
@@ -95,3 +91,9 @@ According to the [api documentation](https://pbs.proxmox.com/docs/api-viewer/ind
 ## Supported versions
 
 We have only tested the exporter with Proxmox Backup Server version **2.X** (see [Proxmox Backup Server Roadmap](https://pbs.proxmox.com/wiki/index.php/Roadmap)). If you have already tested the exporter with a newer version, or have encountered problems, please let us know.
+
+## Release
+
+Each release of the application includes Go-binary archives, checksums file, SBOMs and container images. 
+
+The release workflow creates provenance for its builds using the [SLSA standard](https://slsa.dev), which conforms to the [Level 3 specification](https://slsa.dev/spec/v1.0/levels#build-l3). Each artifact can be verified using the `slsa-verifier` or `cosign` tool (see [Release verification](SECURITY.md#release-verification)).

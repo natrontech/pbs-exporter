@@ -23,9 +23,12 @@ const datastoreUsageApi = "/api2/json/status/datastore-usage"
 const datastoreApi = "/api2/json/admin/datastore"
 const nodeApi = "/api2/json/nodes"
 
-var (
-	timeoutDuration time.Duration
+// These variables are set in build step
+var Version = "v0.0.0-dev.0"
+var Commit = "none"
+var BuildTime = "unknown"
 
+var (
 	tr = &http.Transport{
 		TLSClientConfig: &tls.Config{},
 	}
@@ -665,6 +668,9 @@ func findLastSnapshotWithBackupID(response SnapshotResponse, backupID string) (i
 func main() {
 	flag.Parse()
 
+	// log build information
+	log.Printf("INFO: Starting PBS Exporter %s, commit %s, built at %s", Version, Commit, BuildTime)
+
 	// if env variable is set, it will overwrite defaults or flags
 	if os.Getenv("PBS_LOGLEVEL") != "" {
 		*loglevel = os.Getenv("PBS_LOGLEVEL")
@@ -775,13 +781,16 @@ func main() {
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
-            <head><title>PBS Exporter</title></head>
-            <body>
-            <h1>Proxmox Backup Server Exporter</h1>
-            <p><a href='` + *metricsPath + `'>Metrics</a></p>
-            </body>
-            </html>`))
+		_, err := w.Write([]byte(`<html>
+			<head><title>PBS Exporter</title></head>
+			<body>
+			<h1>Proxmox Backup Server Exporter</h1>
+			<p><a href='` + *metricsPath + `'>Metrics</a></p>
+			</body>
+			</html>`))
+		if err != nil {
+			log.Printf("ERROR: Failed to write response: %s", err)
+		}
 	})
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))
 }
