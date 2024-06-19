@@ -17,3 +17,4 @@ tags
 pbs-exporter
 .env
 bin
+.secrets/
