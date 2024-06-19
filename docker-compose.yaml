@@ -1,8 +1,6 @@
-version: '3.8'
 services:
   pbs-exporter:
-    build: .
-    # image: ghcr.io/natrontech/pbs-exporter:latest
+    image: ghcr.io/natrontech/pbs-exporter:latest
     container_name: pbs-exporter
     user: '65534'
     restart: always

@@ -1,17 +1,68 @@
 # Contributing
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change. 
+All contributions are welcome! If you find a bug or have a feature request, please open an issue or submit a pull request.
 
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+Please note that we have a [Code of Conduct](./CODE_OF_CONDUCT.md), please follow it in all your interactions with the project.
 
-## Pull Request Process
+## How to Contribute
 
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a 
-   build.
-2. Update the README.md with details of changes to the interface, this includes new environment 
-   variables, exposed ports, useful file locations and container parameters.
-3. Increase the version numbers in any examples files and the README.md to the new version that this
-   Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
-4. You may merge the Pull Request in once you have the sign-off of two other developers, or if you 
-   do not have permission to do that, you may request the second reviewer to merge it for you.
+You can make a contribution by following these steps:
+
+  1. Fork this repository, and develop your changes on that fork.
+  2. Commit your changes
+  3. Submit a [pull request](#pull-requests) from your fork to this project.
+
+Before you start, read through the requirements below.  
+
+### Commits
+
+Please make your commit messages meaningful. We recommend creating commit messages according to [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+
+### Commit Signature Verification
+
+Each commit's signature must be verified.
+
+  * [About commit signature verification](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/about-commit-signature-verification)
+
+### Pull Requests
+
+All contributions, including those made by project members, need to be reviewed. We use GitHub pull requests for this purpose. See [GitHub Help](https://help.github.com/articles/about-pull-requests/) for more information on how to use pull requests. See the requirements above for PR on this project.
+
+### Major new features
+
+If a major new feature is added, there should be new tests for it. If there are no tests, the PR will not be merged.
+
+### Versioning
+
+Versions follow [Semantic Versioning](https://semver.org/) terminology and are expressed as `x.y.z`:
+
+- where `x` is the major version
+- `y` is the minor version
+- and `z` is the patch version
+
+## Code convention
+
+## Pre-Commit
+
+Please install [pre-commit](https://pre-commit.com/) to enforce some pre-commit checks.
+After cloning the repository, you will need to install the hook script manually:
+
+```bash
+pre-commit install
+```
+
+## golint
+
+We will check the code against [golangci-lint](https://github.com/golangci/golangci-lint) to enforce some code conventions. It runs in the CI pipeline and in pre-commit. You can also run it manually:
+
+```bash
+golangci-lint run
+```
+
+## goimports
+
+We have a pre-commit hook that runs goimports to update the Go import lines, adding missing ones and removing unreferenced ones. You can install it with:
+
+```bash
+go install golang.org/x/tools/cmd/goimports@latest
+```

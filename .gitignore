@@ -16,3 +16,4 @@ tags
 # local binary
 pbs-exporter
 .env
+bin

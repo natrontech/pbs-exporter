@@ -1,0 +1,30 @@
+name: "Gosec Security Scan"
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - id: checkout
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        with:
+          persist-credentials: false
+      - name: Run Gosec Security Scanner
+        env:
+          GOTOOLCHAIN: "go1.22.4"
+        uses: securego/gosec@6fbd381238e97e1d1f3358f0d6d65de78dcf9245 # v2.20.0
+        with:
+          args: ./...
