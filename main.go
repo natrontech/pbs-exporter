@@ -20,6 +20,7 @@ import (
 )
 
 const promNamespace = "pbs"
+const versionApi = "/api2/json/version"
 const datastoreUsageApi = "/api2/json/status/datastore-usage"
 const datastoreApi = "/api2/json/admin/datastore"
 const nodeApi = "/api2/json/nodes"
@@ -64,6 +65,11 @@ var (
 		prometheus.BuildFQName(promNamespace, "", "up"),
 		"Was the last query of PBS successful.",
 		nil, nil,
+	)
+	version = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "version"),
+		"Version of the PBS installation.",
+		[]string{"version"}, nil,
 	)
 	available = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "available"),
@@ -177,6 +183,14 @@ var (
 	)
 )
 
+type VersionResponse struct {
+	Data struct {
+		Release string `json:"release"`
+		Repoid  string `json:"repoid"`
+		Version string `json:"version"`
+	} `json:"data"`
+}
+
 type DatastoreResponse struct {
 	Data []struct {
 		Avail     int64  `json:"avail"`
@@ -268,6 +282,7 @@ func NewExporter(endpoint string, username string, apitoken string, apitokenname
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- up
+	ch <- version
 	ch <- available
 	ch <- size
 	ch <- used
@@ -308,6 +323,13 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 }
 
 func (e *Exporter) collectFromAPI(ch chan<- prometheus.Metric) error {
+
+	// get version
+	err := e.getVersion(ch)
+	if err != nil {
+		return err
+	}
+
 	// get datastores
 	req, err := http.NewRequest("GET", e.endpoint+datastoreUsageApi, nil)
 	if err != nil {
@@ -320,7 +342,7 @@ func (e *Exporter) collectFromAPI(ch chan<- prometheus.Metric) error {
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: Request URL: %s", req.URL)
-		//log.Printf("DEBUG: Request Header: %s", vmID)
+		//		log.Printf("DEBUG: Request Header: %s", vmID)
 	}
 
 	// make request and show output
@@ -368,6 +390,61 @@ func (e *Exporter) collectFromAPI(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (e *Exporter) getVersion(ch chan<- prometheus.Metric) error {
+	// get version
+	req, err := http.NewRequest("GET", e.endpoint+versionApi, nil)
+	if err != nil {
+		return err
+	}
+
+	// add Authorization header
+	req.Header.Set("Authorization", e.authorizationHeader)
+
+	// debug
+	if *loglevel == "debug" {
+		log.Printf("DEBUG: Request URL: %s", req.URL)
+		//		log.Printf("DEBUG: Request Header: %s", vmID)
+	}
+
+	// make request and show output
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err := resp.Body.Close(); err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
+	if err != nil {
+		return err
+	}
+
+	// debug
+	if *loglevel == "debug" {
+		log.Printf("DEBUG: Status code %d returned from endpoint: %s", resp.StatusCode, e.endpoint)
+		//log.Printf("DEBUG: Response body: %s", string(body))
+	}
+
+	// check if status code is 200
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("ERROR: Status code %d returned from endpoint: %s", resp.StatusCode, e.endpoint)
+	}
+
+	// parse json
+	var response VersionResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return err
+	}
+
+	ch <- prometheus.MustNewConstMetric(
+		version, prometheus.GaugeValue, 1, response.Data.Version,
+	)
 
 	return nil
 }
