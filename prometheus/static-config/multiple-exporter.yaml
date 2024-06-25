@@ -14,5 +14,5 @@
   scheme: http
   static_configs:
   - targets:
-    - 'pbs-exporter-1:9101' # PBS_ENDPOINT set to target 1
-    - 'pbs-exporter-2:9101' # PBS_ENDPOINT set to target 2
+    - 'pbs-exporter-1:10019' # PBS_ENDPOINT set to target 1
+    - 'pbs-exporter-2:10019' # PBS_ENDPOINT set to target 2

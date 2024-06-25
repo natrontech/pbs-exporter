@@ -62,11 +62,12 @@ signs:
 release:
   # allow pre-release versions (e.g. by tagging with v1.0.0-rc0)
   prerelease: auto
+  draft: true
   footer: |
     **Full Changelog**: https://github.com/natrontech/{{ .ProjectName }}/compare/{{ .PreviousTag }}...{{ .Tag }}
 
     **Docker Images**
-    - `ghcr.io/natrontech/{{ .ProjectName }}:{{ .Version }}`
+    - `ghcr.io/natrontech/{{ .ProjectName }}:v{{ .Version }}`
     {{ if not .Prerelease }}- `ghcr.io/natrontech/{{ .ProjectName }}:latest`{{ end }}
 
 # github changelog for new release
