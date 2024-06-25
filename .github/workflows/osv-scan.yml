@@ -20,4 +20,4 @@ jobs:
       # Require writing security events to upload SARIF file to security tab
       security-events: write
       contents: read
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@75532bf0bf75464b047d80414dbce04449498365" #v1.7.3
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@ba0b4d196d231340e0ae94ae00933c8be0984192" #v1.7.4
