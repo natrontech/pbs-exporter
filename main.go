@@ -69,7 +69,7 @@ var (
 	version = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "version"),
 		"Version of the PBS installation.",
-		[]string{"version"}, nil,
+		[]string{"version", "repoid", "release"}, nil,
 	)
 	available = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "available"),
@@ -443,7 +443,7 @@ func (e *Exporter) getVersion(ch chan<- prometheus.Metric) error {
 	}
 
 	ch <- prometheus.MustNewConstMetric(
-		version, prometheus.GaugeValue, 1, response.Data.Version,
+		version, prometheus.GaugeValue, 1, response.Data.Version, response.Data.Repoid, response.Data.Release,
 	)
 
 	return nil
