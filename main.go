@@ -55,7 +55,7 @@ var (
 		"Proxmox Backup Server insecure")
 	metricsPath = flag.String("pbs.metrics-path", "/metrics",
 		"Path under which to expose metrics")
-	listenAddress = flag.String("pbs.listen-address", ":9101",
+	listenAddress = flag.String("pbs.listen-address", ":10019",
 		"Address on which to expose metrics")
 	loglevel = flag.String("pbs.loglevel", "info",
 		"Loglevel")

@@ -60,7 +60,7 @@ You can use the following flags to configure the exporter. All flags can also be
 | `pbs.timeout`            | `PBS_TIMEOUT`        | Timeout for requests to Proxmox Backup Server        | `5s`                                                   |
 | `pbs.insecure`           | `PBS_INSECURE`       | Disable TLS certificate verification                 | `false`                                                |
 | `pbs.metrics-path`       | `PBS_METRICS_PATH`   | Path under which to expose metrics                   | `/metrics`                                             |
-| `pbs.web.listen-address` | `PBS_LISTEN_ADDRESS` | Address to listen on for web interface and telemetry | `:9101`                                                |
+| `pbs.web.listen-address` | `PBS_LISTEN_ADDRESS` | Address to listen on for web interface and telemetry | `:10019`                                                |
 
 ### Docker secrets
 
@@ -78,7 +78,7 @@ The variables `PBS_API_TOKEN`, `PBS_API_TOKEN_NAME`, and `PBS_USERNAME` take pre
 
 ## Multiple Proxmox Backup Servers
 
-If you want to monitor multiple Proxmox Backup Servers, you can use the `targets` parameter in the query string. Instead of setting the `pbs.endpoint` flag (or `PBS_ENDPOINT` env), you can use the `target` parameter in the query string to specify the Proxmox Backup Server to monitor. You would then use following URL to scrape metrics: `http://localhost:9101/metrics?target=http://10.10.10.10:8007`.
+If you want to monitor multiple Proxmox Backup Servers, you can use the `targets` parameter in the query string. Instead of setting the `pbs.endpoint` flag (or `PBS_ENDPOINT` env), you can use the `target` parameter in the query string to specify the Proxmox Backup Server to monitor. You would then use following URL to scrape metrics: `http://localhost:10019/metrics?target=http://10.10.10.10:8007`.
 
 This is useful if you are using Prometheus and want to monitor multiple Proxmox Backup Servers with one "pbs-exporter" instance.
 You find examples for Prometheus static configuration in the [prometheus/static-config](prometheus/static-config) directory.

@@ -5,7 +5,7 @@ services:
     user: '65534'
     restart: always
     ports:
-      - "9101:9101"
+      - "10019:10019"
     environment:
       - PBS_API_TOKEN=
       - PBS_ENDPOINT=https://pbs-server:8007

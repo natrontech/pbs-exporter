@@ -2,7 +2,7 @@
 #           important: env PBS_ENDPOINT not set!
 #
 # Setup:
-# - exporter instance: pbs-exporter:9101
+# - exporter instance: pbs-exporter:10019
 # - first PBS target: https://10.10.10.10:8007
 # - second PBS target: https://10.10.10.11:8007
 
@@ -23,4 +23,4 @@ scrape_configs:
     - source_labels: [__param_target]
       target_label: instance
     - target_label: __address__
-      replacement: pbs-exporter:9101 # pbs-exporter address
+      replacement: pbs-exporter:10019 # pbs-exporter address
