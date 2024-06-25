@@ -18,6 +18,7 @@ Metrics are retrieved using the [Proxmox Backup Server API](https://pbs.proxmox.
 | Metric                         | Meaning                                                 | Labels                                       |
 | ------------------------------ | ------------------------------------------------------- | -------------------------------------------- |
 | pbs_up                         | Was the last query of Proxmox Backup Server successful? |                                              |
+| pbs_version                    | Version of Proxmox Backup Server                        | `version`, `repoid`, `release`               |
 | pbs_available                  | The available bytes of the underlying storage.          | `datastore`                                  |
 | pbs_size                       | The size of the underlying storage in bytes.            | `datastore`                                  |
 | pbs_used                       | The used bytes of the underlying storage.               | `datastore`                                  |
