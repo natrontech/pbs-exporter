@@ -1,0 +1,52 @@
+name: verify-release-assets
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  verification-with-slsa-verifier:
+    runs-on: ubuntu-latest
+    permissions: read-all
+    steps:
+      - name: Install the verifier
+        uses: slsa-framework/slsa-verifier/actions/installer@eb7007070baa04976cb9e25a0d8034f8db030a86 # v2.5.1
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 # v3.5.0
+
+      - name: Download assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Downloading release assets (tag: $GITHUB_REF_NAME)"
+          gh -R "$GITHUB_REPOSITORY" release download "$GITHUB_REF_NAME"
+      # verify each artifact in checksum.txt file with the provenance
+      - name: Verify assets
+        run: |
+          set -euo pipefail
+
+          echo "Verifying checksums.txt"
+          cosign verify-blob \
+            --certificate checksums.txt.pem \
+            --signature checksums.txt.sig \
+            --certificate-identity-regexp '^https://github.com/natrontech/pbs-exporter/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            checksums.txt
+
+          checksums=$(cat checksums.txt)
+          while read -r line; do
+            fn=$(echo $line | cut -d ' ' -f2)
+            echo "Verifying $fn"
+            slsa-verifier verify-artifact --provenance-path "multiple.intoto.jsonl" \
+                                          --source-uri "github.com/$GITHUB_REPOSITORY" \
+                                          --source-tag "$GITHUB_REF_NAME" \
+                                          "$fn"
+          done <<<"$checksums"
