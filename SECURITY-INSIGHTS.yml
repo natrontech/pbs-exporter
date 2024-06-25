@@ -1,0 +1,56 @@
+header:
+  schema-version: 1.0.0
+  expiration-date: '2025-06-25T10:00:00.000Z'
+  last-updated: '2024-06-25'
+  last-reviewed: '2024-06-25'
+  project-url: https://github.com/natrontech/pbs-exporter
+  changelog: https://github.com/natrontech/pbs-exporter/blob/main/CHANGELOG.md
+  license: https://github.com/natrontech/pbs-exporter/blob/main/LICENSE
+project-lifecycle:
+  bug-fixes-only: false
+  core-team:
+    - name: Jan Fuhrer
+      contact: janfuhrer@mailbox.org
+    - name: Sven Gerber
+      contact: github@gerber.uno
+  status: concept
+contribution-policy:
+  accepts-pull-requests: true
+  accepts-automated-pull-requests: true
+  contributing-policy: https://github.com/natrontech/pbs-exporter/blob/main/CONTRIBUTING.md
+  code-of-conduct: https://github.com/natrontech/pbs-exporter/blob/main/CODE_OF_CONDUCT.md
+distribution-points:
+  - https://github.com/natrontech/pbs-exporter/releases
+  - https://github.com/orgs/natrontech/packages?repo_name=pbs-exporter
+security-testing:
+- tool-type: sca
+  tool-name: Dependabot
+  tool-version: latest
+  integration:
+    ad-hoc: false
+    ci: true
+    before-release: true
+  comment: |
+    Dependabot is enabled for this repo.
+security-contacts:
+- type: email
+  value: info@natron.io
+  primary: true
+vulnerability-reporting:
+  accepts-vulnerability-reports: true
+  bug-bounty-available: false
+  email-contact: info@natron.io
+  security-policy: https://github.com/natrontech/pbs-exporter/blob/main/SECURITY.md
+  comment: |
+    Report security vulnerabilities via GitHub Security Advisory in this repository.
+dependencies:
+  third-party-packages: true
+  dependencies-lists:
+  - https://github.com/natrontech/pbs-exporter/blob/main/go.mod
+  sbom:
+  - sbom-file: https://github.com/natrontech/pbs-exporter/releases
+    sbom-format: CycloneDX
+    sbom-url: https://github.com/natrontech/pbs-exporter/blob/main/SECURITY.md#sbom
+  - sbom-file: https://github.com/natrontech/pbs-exporter/pkgs/container/sbom
+    sbom-format: CycloneDX
+    sbom-url: https://github.com/natrontech/pbs-exporter/blob/main/SECURITY.md#sbom
