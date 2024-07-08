@@ -1,6 +1,6 @@
 module github.com/natrontech/pbs-exporter
 
-go 1.22.4
+go 1.22.5
 
 require github.com/prometheus/client_golang v1.19.1
 
