@@ -1,8 +1,8 @@
 header:
   schema-version: 1.0.0
-  expiration-date: '2025-06-25T10:00:00.000Z'
+  expiration-date: '2025-12-27T10:00:00.000Z'
   last-updated: '2024-06-25'
-  last-reviewed: '2024-06-25'
+  last-reviewed: '2024-12-27'
   project-url: https://github.com/natrontech/pbs-exporter
   changelog: https://github.com/natrontech/pbs-exporter/blob/main/CHANGELOG.md
   license: https://github.com/natrontech/pbs-exporter/blob/main/LICENSE
