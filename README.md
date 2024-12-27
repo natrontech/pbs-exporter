@@ -91,7 +91,7 @@ According to the [api documentation](https://pbs.proxmox.com/docs/api-viewer/ind
 
 ## Supported versions
 
-We have only tested the exporter with Proxmox Backup Server version **2.X** (see [Proxmox Backup Server Roadmap](https://pbs.proxmox.com/wiki/index.php/Roadmap)). If you have already tested the exporter with a newer version, or have encountered problems, please let us know.
+We have tested the exporter with Proxmox Backup Server version **3.X** (see [Proxmox Backup Server Roadmap](https://pbs.proxmox.com/wiki/index.php/Roadmap)). If you have already tested the exporter with a newer version, or have encountered problems, please let us know.
 
 ## Release
 
