@@ -59,6 +59,7 @@ var (
 		"Address on which to expose metrics")
 	loglevel = flag.String("pbs.loglevel", "info",
 		"Loglevel")
+	showVersion = flag.Bool("version", false, "Show version and exit")
 
 	// Metrics
 	up = prometheus.NewDesc(
@@ -755,6 +756,11 @@ func findLastSnapshotWithBackupID(response SnapshotResponse, backupID string) (i
 
 func main() {
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("PBS Exporter Version: %s, Commit: %s, Build Time: %s\n", Version, Commit, BuildTime)
+		os.Exit(0)
+	}
 
 	// log build information
 	log.Printf("INFO: Starting PBS Exporter %s, commit %s, built at %s", Version, Commit, BuildTime)
