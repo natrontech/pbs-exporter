@@ -99,7 +99,7 @@ jobs:
       id-token: write # To sign the provenance (fetch an OIDC token from GitHub)
       contents: write # To add assets to a release.
     # MUST be referenced by tag (see https://github.com/slsa-framework/slsa-github-generator/?tab=readme-ov-file#referencing-slsa-builders-and-generators)
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: "${{ needs.goreleaser.outputs.hashes }}"
       upload-assets: true # upload to a new release
@@ -112,7 +112,7 @@ jobs:
       id-token: write
       packages: write
     # MUST be referenced by tag (see https://github.com/slsa-framework/slsa-github-generator/?tab=readme-ov-file#referencing-slsa-builders-and-generators)
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
       image: ghcr.io/${{ github.repository_owner }}/pbs-exporter
       digest: ${{ needs.ko-publish.outputs.digest }}
