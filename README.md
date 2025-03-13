@@ -62,6 +62,35 @@ You can use the following flags to configure the exporter. All flags can also be
 | `pbs.metrics-path`   | `PBS_METRICS_PATH`   | Path under which to expose metrics                   | `/metrics`                                             |
 | `pbs.listen-address` | `PBS_LISTEN_ADDRESS` | Address to listen on for web interface and telemetry | `:10019`                                               |
 
+### Running on PBS (systemd)
+The Prometheus-pbs-exporter can also simply be installed on a Proxmox Backup Server instead of spawning an additional Docker container.
+
+```
+# Download prometheus-pbs-exporter
+mkdir /opt/pbs-exporter
+cd /opt/pbs-exporter
+wget https://github.com/natrontech/pbs-exporter/releases/download/v0.6.4/pbs-exporter_v0.6.4_linux_amd64.tar.gz
+tar xfvz pbs-exporter_v0.6.4_linux_amd64.tar.gz
+cp pbs-exporter-linux-amd64 /bin/
+
+# Create a dedicated user for running the prometheus-pbs-exporter
+useradd -m pbs-exporter -s /sbin/nologin
+
+# Download systemd unit file
+cd /etc/systemd/system
+wget https://raw.githubusercontent.com/natrontech/pbs-exporter/refs/heads/main/systemd/prometheus-pbs-exporter.service
+systemd daemon-reload
+
+# Create prometheus-pbs-exporter environment file (req. minimum the token)
+vi /etc/pbs-exporter.env
+# Add the token content and other options if required:
+TOKEN=beef-1337-cafe-beef-cafe-1337
+
+# Enable and start the service
+systemctl enalbe prometheus-pbs-exporter.service
+systemctl start prometheus-pbs-exporter.service
+```
+
 ### Docker secrets
 
 If you are using [Docker secrets](https://docs.docker.com/engine/swarm/secrets/), you can use the following environment variables to set the path to the secrets:
