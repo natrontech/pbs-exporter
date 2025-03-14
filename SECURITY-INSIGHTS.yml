@@ -1,8 +1,8 @@
 header:
   schema-version: 1.0.0
-  expiration-date: '2025-12-27T10:00:00.000Z'
-  last-updated: '2024-06-25'
-  last-reviewed: '2024-12-27'
+  expiration-date: '2026-03-14T10:00:00.000Z'
+  last-updated: '2025-03-14'
+  last-reviewed: '2025-03-14'
   project-url: https://github.com/natrontech/pbs-exporter
   changelog: https://github.com/natrontech/pbs-exporter/blob/main/CHANGELOG.md
   license: https://github.com/natrontech/pbs-exporter/blob/main/LICENSE
@@ -34,12 +34,12 @@ security-testing:
     Dependabot is enabled for this repo.
 security-contacts:
 - type: email
-  value: info@natron.io
+  value: security@natron.io
   primary: true
 vulnerability-reporting:
   accepts-vulnerability-reports: true
   bug-bounty-available: false
-  email-contact: info@natron.io
+  email-contact: security@natron.io
   security-policy: https://github.com/natrontech/pbs-exporter/blob/main/SECURITY.md
   comment: |
     Report security vulnerabilities via GitHub Security Advisory in this repository.
