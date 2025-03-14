@@ -36,7 +36,7 @@ You can manually inspect the provenance of the release artifacts (without contai
 curl -L -O https://github.com/natrontech/pbs-exporter/releases/download/$VERSION/multiple.intoto.jsonl
 
 # decode the payload
-cat multiple.intoto.jsonl | jq -r '.payload' | base64 -d | jq
+cat multiple.intoto.jsonl | jq -r '.dsseEnvelope.payload' | base64 -d | jq
 ```
 
 ### Verify provenance of release artifacts
@@ -100,7 +100,7 @@ COSIGN_REPOSITORY=ghcr.io/natrontech/signatures cosign verify-attestation \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+$' \
   --policy policy.cue \
-  $IMAGE | jq
+  $IMAGE | jq -r '.payload' | base64 -d | jq
 ```
 
 ### Verify signature of container image
