@@ -6,7 +6,7 @@ Documentation=https://github.com/natrontech/pbs-exporter
 EnvironmentFile=/etc/pbs-exporter.env
 Restart=always
 User=pbs-exporter
-ExecStart=/opt/pbs_exporter/pbs-exporter-linux-amd64 -pbs.insecure ${INSECURE} -pbs.api.token ${TOKEN} -pbs.endpoint https://localhost:8007
+ExecStart=/opt/pbs-exporter/pbs-exporter-linux-amd64 -pbs.insecure ${INSECURE} -pbs.api.token ${TOKEN} -pbs.endpoint https://localhost:8007
 
 [Install]
 WantedBy=multi-user.target
