@@ -87,7 +87,7 @@ vi /etc/pbs-exporter.env
 TOKEN=beef-1337-cafe-beef-cafe-1337
 
 # Enable and start the service
-systemctl enalbe prometheus-pbs-exporter.service
+systemctl enable prometheus-pbs-exporter.service
 systemctl start prometheus-pbs-exporter.service
 ```
 
