@@ -25,6 +25,6 @@ jobs:
     - name: Run Gosec Security Scanner
       env:
         GOTOOLCHAIN: "go1.24.5"
-      uses: securego/gosec@955a68d0d19f4afb7503068f95059f7d0c529017 # v2.22.3
+      uses: securego/gosec@d2d3ae66bd8d340b78b5142b6fe610691783c2fe # v2.22.5
       with:
         args: ./...
