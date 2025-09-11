@@ -604,8 +604,6 @@ func (e *Exporter) getDatastoreMetric(datastore Datastore, ch chan<- prometheus.
 		if resp.StatusCode == 400 {
 			// check if datastore is being deleted
 			isBeingDeleted, err := regexp.MatchString("(?i)datastore is being deleted", string(body[:]))
-			isMaintenance, err := regexp.MatchString("offline maintenance mode", string(body[:]))
-			isUnmounted, err := regexp.MatchString("is not mounted", string(body[:]))
 			if err != nil {
 				return err
 			}
@@ -613,10 +611,12 @@ func (e *Exporter) getDatastoreMetric(datastore Datastore, ch chan<- prometheus.
 				log.Printf("INFO: Datastore: %s is being deleted, Skip scrape datastore metric", datastore.Store)
 				return nil
 			}
+			isMaintenance, err := regexp.MatchString("(?i)offline maintenance mode", string(body[:]))
 			if isMaintenance {
 				log.Printf("INFO: Datastore: %s is in maintenance mode, Skip scrape datastore metric", datastore.Store)
 				return nil
 			}
+			isUnmounted, err := regexp.MatchString("(?i)is not mounted", string(body[:]))
 			if isUnmounted {
 				log.Printf("INFO: Datastore: %s is unmounted, Skip scrape datastore metric", datastore.Store)
 				return nil
