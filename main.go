@@ -107,6 +107,21 @@ var (
 		"The verify status of the last backup of a VM.",
 		[]string{"datastore", "namespace", "vm_id", "vm_name"}, nil,
 	)
+	subscription_status = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "host_subscription_status"),
+		"The subscription status of the host.",
+		[]string{"status"}, nil,
+	)
+	subscription_info = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "host_subscription_info"),
+		"The subscription info of the host.",
+		[]string{"productname", "status"}, nil,
+	)
+	subscription_due_timestamp_seconds = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "host_subscription_due_timestamp_seconds"),
+		"The subscription next due timestamp (unix seconds) of the host.",
+		[]string{"productname"}, nil,
+	)
 	host_cpu_usage = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "host_cpu_usage"),
 		"The CPU usage of the host.",
@@ -291,6 +306,9 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- snapshot_vm_count
 	ch <- snapshot_vm_last_timestamp
 	ch <- snapshot_vm_last_verify
+	ch <- subscription_info
+	ch <- subscription_status
+	ch <- subscription_due_timestamp_seconds
 	ch <- host_cpu_usage
 	ch <- host_memory_free
 	ch <- host_memory_total
@@ -392,6 +410,12 @@ func (e *Exporter) collectFromAPI(ch chan<- prometheus.Metric) error {
 		return err
 	}
 
+	// get node subscription metrics
+	err = e.getNodeSubscriptionMetrics(ch)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -446,6 +470,89 @@ func (e *Exporter) getVersion(ch chan<- prometheus.Metric) error {
 	ch <- prometheus.MustNewConstMetric(
 		version, prometheus.GaugeValue, 1, response.Data.Version, response.Data.Repoid, response.Data.Release,
 	)
+
+	return nil
+}
+
+func (e *Exporter) getNodeSubscriptionMetrics(ch chan<- prometheus.Metric) error {
+	req, err := http.NewRequest("GET", e.endpoint+nodeApi+"/localhost/subscription", nil)
+	if err != nil {
+		return err
+	}
+
+	// add Authorization header
+	req.Header.Set("Authorization", e.authorizationHeader)
+
+	if *loglevel == "debug" {
+		log.Printf("DEBUG: Request URL: %s", req.URL)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err := resp.Body.Close(); err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("ERROR: Status code %d returned from endpoint: %s", resp.StatusCode, e.endpoint)
+	}
+
+	if *loglevel == "debug" {
+		log.Printf("DEBUG: Status code %d returned from endpoint: %s", resp.StatusCode, e.endpoint)
+	}
+
+	var raw struct {
+		Data map[string]any `json:"data"`
+	}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return err
+	}
+
+	// default values
+	statusStr := ""
+	productName := "unknown"
+	dueTs := int64(0)
+
+	if v, ok := raw.Data["status"]; ok && v != nil {
+		statusStr = fmt.Sprintf("%v", v)
+	}
+	if v, ok := raw.Data["productname"]; ok && v != nil {
+		productName = fmt.Sprintf("%v", v)
+	}
+	if v, ok := raw.Data["nextduedate"]; ok && v != nil {
+			if s, ok := v.(string); ok {
+					t, err := time.Parse("2006-01-02", s)
+					if err == nil {
+							dueTs = t.Unix()
+					}
+			}
+	}
+
+	ch <- prometheus.MustNewConstMetric(
+		subscription_info, prometheus.GaugeValue, 1, productName, statusStr,
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		subscription_due_timestamp_seconds, prometheus.GaugeValue, float64(dueTs), productName,
+	)
+
+	// Emit a metric for each possible status with 1/0
+	statuses := []string{"new", "notfound", "active", "invalid", "expired", "suspended"}
+	for _, s := range statuses {
+		val := 0.0
+		if statusStr == s {
+			val = 1.0
+		}
+		ch <- prometheus.MustNewConstMetric(
+			subscription_status, prometheus.GaugeValue, val, s,
+		)
+	}
 
 	return nil
 }
