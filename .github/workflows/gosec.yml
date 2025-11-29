@@ -19,12 +19,12 @@ jobs:
       GO111MODULE: on
     steps:
     - id: checkout
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       with:
         persist-credentials: false
     - name: Run Gosec Security Scanner
       env:
         GOTOOLCHAIN: "go1.25.4"
-      uses: securego/gosec@c9453023c4e81ebdb6dde29e22d9cd5e2285fb16 # v2.22.8
+      uses: securego/gosec@6be2b51fd78feca86af91f5186b7964d76cb1256 # v2.22.10
       with:
         args: ./...
