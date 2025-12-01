@@ -12,7 +12,7 @@ The contributor will send a response indicating the next steps in handling your 
 
 The release workflow creates provenance for its builds using the [SLSA standard](https://slsa.dev), which conforms to the [Level 3 specification](https://slsa.dev/spec/v1.0/levels#build-l3). The provenance is stored in the `multiple.intoto.jsonl` file of each release and can be used to verify the integrity and authenticity of the release artifacts.
 
-All signatures are created by [Cosign](https://github.com/sigstore/cosign) using the [keyless signing](https://docs.sigstore.dev/verifying/verify/#keyless-verification-using-openid-connect) method. An overview how the keyless signing works can be found [here](./docs/slsa/sigstore/).
+All signatures are created by [Cosign](https://github.com/sigstore/cosign) using the [keyless signing](https://docs.sigstore.dev/cosign/verifying/verify/#keyless-verification-using-openid-connect) method. An overview how the keyless signing works can be found [here](./docs/slsa/sigstore/).
 
 ### Prerequisites
 
@@ -88,15 +88,16 @@ The output should be: `PASSED: Verified SLSA provenance`.
 
 **Verify with Cosign**
 
-As an alternative to the SLSA verifier, you can use `cosign` to verify the provenance of the container images. Cosign also supports validating the attestation against `CUE` policies (see [Validate In-Toto Attestation](https://docs.sigstore.dev/verifying/attestation/#validate-in-toto-attestations) for more information), which is useful to ensure that some specific requirements are met. We provide a [policy.cue](./policy.cue) file to verify the correct workflow has triggered the release and that the image was generated from the correct source repository. 
+As an alternative to the SLSA verifier, you can use `cosign` to verify the provenance of the container images. Cosign also supports validating the attestation against `CUE` policies (see [Validate In-Toto Attestation](https://docs.sigstore.dev/cosign/verifying/attestation/#validate-in-toto-attestations) for more information), which is useful to ensure that some specific requirements are met. We provide a [policy.cue](./policy.cue) file to verify the correct workflow has triggered the release and that the image was generated from the correct source repository. 
 
 ```bash
 # download policy.cue
 curl -L -O https://raw.githubusercontent.com/natrontech/pbs-exporter/main/policy.cue
 
-# verify the image with cosign
+# verify the image with cosign (at the moment use `--new-bundle-format=false` as the new format is not yet supported for SLSA provenance)
 COSIGN_REPOSITORY=ghcr.io/natrontech/signatures cosign verify-attestation \
   --type slsaprovenance \
+  --new-bundle-format=false \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --certificate-identity-regexp '^https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+$' \
   --policy policy.cue \
@@ -127,11 +128,11 @@ The checksum file can be verified with `cosign` as follows:
 ```bash
 # download the checksum
 curl -L -O https://github.com/natrontech/pbs-exporter/releases/download/$VERSION/checksums.txt
+curl -L -O https://github.com/natrontech/pbs-exporter/releases/download/$VERSION/checksums.txt.sigstore.json
 
 # verify the checksum file
 cosign verify-blob \
-	--certificate https://github.com/natrontech/pbs-exporter/releases/download/$VERSION/checksums.txt.pem \
-	--signature https://github.com/natrontech/pbs-exporter/releases/download/$VERSION/checksums.txt.sig \
+	--bundle checksums.txt.sigstore.json \
 	--certificate-identity-regexp '^https://github.com/natrontech/pbs-exporter/.github/workflows/release.yml@refs/tags/v[0-9]+.[0-9]+.[0-9]+(-rc.[0-9]+)?$' \
 	--certificate-oidc-issuer https://token.actions.githubusercontent.com \
 	checksums.txt

@@ -53,12 +53,11 @@ signs:
   - cmd: cosign
     args:
     - "sign-blob"
-    - "--output-signature=${signature}"
+    - "--bundle=${signature}"
     - "${artifact}"
-    - "--output-certificate=${certificate}"
     - "--yes"
     artifacts: checksum
-    certificate: '${artifact}.pem'
+    signature: "${artifact}.sigstore.json"
 
 release:
   # allow pre-release versions (e.g. by tagging with v1.0.0-rc0)
