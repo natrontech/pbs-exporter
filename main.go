@@ -526,12 +526,12 @@ func (e *Exporter) getNodeSubscriptionMetrics(ch chan<- prometheus.Metric) error
 		productName = fmt.Sprintf("%v", v)
 	}
 	if v, ok := raw.Data["nextduedate"]; ok && v != nil {
-			if s, ok := v.(string); ok {
-					t, err := time.Parse("2006-01-02", s)
-					if err == nil {
-							dueTs = t.Unix()
-					}
+		if s, ok := v.(string); ok {
+			t, err := time.Parse("2006-01-02", s)
+			if err == nil {
+				dueTs = t.Unix()
 			}
+		}
 	}
 
 	ch <- prometheus.MustNewConstMetric(

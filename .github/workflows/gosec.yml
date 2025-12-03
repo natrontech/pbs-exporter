@@ -24,7 +24,7 @@ jobs:
         persist-credentials: false
     - name: Run Gosec Security Scanner
       env:
-        GOTOOLCHAIN: "go1.25.4"
+        GOTOOLCHAIN: "go1.25.5"
       uses: securego/gosec@6be2b51fd78feca86af91f5186b7964d76cb1256 # v2.22.10
       with:
         args: ./...
