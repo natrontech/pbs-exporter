@@ -15,32 +15,35 @@ Metrics are retrieved using the [Proxmox Backup Server API](https://pbs.proxmox.
 
 ## Exported Metrics
 
-| Metric                         | Meaning                                                 | Labels                                       |
-| ------------------------------ | ------------------------------------------------------- | -------------------------------------------- |
-| pbs_up                         | Was the last query of Proxmox Backup Server successful? |                                              |
-| pbs_version                    | Version of Proxmox Backup Server                        | `version`, `repoid`, `release`               |
-| pbs_available                  | The available bytes of the underlying storage.          | `datastore`                                  |
-| pbs_size                       | The size of the underlying storage in bytes.            | `datastore`                                  |
-| pbs_used                       | The used bytes of the underlying storage.               | `datastore`                                  |
-| pbs_snapshot_count             | The total number of backups.                            | `datastore`, `namespace`                     |
-| pbs_snapshot_vm_count          | The total number of backups per VM.                     | `datastore`, `namespace`, `vm_id`, `vm_name` |
-| pbs_snapshot_vm_last_timestamp | The timestamp of the last backup of a VM.               | `datastore`, `namespace`, `vm_id`, `vm_name` |
-| pbs_snapshot_vm_last_verify    | The verify status of the last backup of a VM.           | `datastore`, `namespace`, `vm_id`, `vm_name` |
-| pbs_host_cpu_usage             | The CPU usage of the host.                              |                                              |
-| pbs_host_memory_free           | The free memory of the host.                            |                                              |
-| pbs_host_memory_total          | The total memory of the host.                           |                                              |
-| pbs_host_memory_used           | The used memory of the host.                            |                                              |
-| pbs_host_swap_free             | The free swap of the host.                              |                                              |
-| pbs_host_swap_total            | The total swap of the host.                             |                                              |
-| pbs_host_swap_used             | The used swap of the host.                              |                                              |
-| pbs_host_disk_available        | The available disk of the local root disk in bytes.     |                                              |
-| pbs_host_disk_total            | The total disk of the local root disk in bytes.         |                                              |
-| pbs_host_disk_used             | The used disk of the local root disk in bytes.          |                                              |
-| pbs_host_uptime                | The uptime of the host.                                 |                                              |
-| pbs_host_io_wait               | The io wait of the host.                                |                                              |
-| pbs_host_load1                 | The load for 1 minute of the host.                      |                                              |
-| pbs_host_load5                 | The load for 5 minutes of the host.                     |                                              |
-| pbs_host_load15                | The load 15 minutes of the host.                        |                                              |
+| Metric                                      | Meaning                                                               | Labels                                                                       |
+| ------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| pbs_up                                      | Was the last query of Proxmox Backup Server successful?               |                                                                              |
+| pbs_version                                 | Version of Proxmox Backup Server                                      | `version`, `repoid`, `release`                                               |
+| pbs_available                               | The available bytes of the underlying storage.                        | `datastore`                                                                  |
+| pbs_size                                    | The size of the underlying storage in bytes.                          | `datastore`                                                                  |
+| pbs_used                                    | The used bytes of the underlying storage.                             | `datastore`                                                                  |
+| pbs_snapshot_count                          | The total number of backups.                                          | `datastore`, `namespace`                                                     |
+| pbs_snapshot_vm_count                       | The total number of backups per VM.                                   | `datastore`, `namespace`, `vm_id`, `vm_name`                                 |
+| pbs_snapshot_vm_last_timestamp              | The timestamp of the last backup of a VM.                             | `datastore`, `namespace`, `vm_id`, `vm_name`                                 |
+| pbs_snapshot_vm_last_verify                 | The verify status of the last backup of a VM.                         | `datastore`, `namespace`, `vm_id`, `vm_name`                                 |
+| pbs_host_subscription_due_timestamp_seconds | The subscription due timestamp of the host in seconds.                | `productname`                                                                |
+| pbs_host_subscription_info                  | The subscription info of the host.                                    | `productname`, `status`                                                      |
+| pbs_host_subscription_status                | Indicates if the subscription is in the state indicated by the label. | `status` = (`active`\|`expired`\|`invalid`\|`new`\|`notfound`\|`superseded`) |
+| pbs_host_cpu_usage                          | The CPU usage of the host.                                            |                                                                              |
+| pbs_host_memory_free                        | The free memory of the host.                                          |                                                                              |
+| pbs_host_memory_total                       | The total memory of the host.                                         |                                                                              |
+| pbs_host_memory_used                        | The used memory of the host.                                          |                                                                              |
+| pbs_host_swap_free                          | The free swap of the host.                                            |                                                                              |
+| pbs_host_swap_total                         | The total swap of the host.                                           |                                                                              |
+| pbs_host_swap_used                          | The used swap of the host.                                            |                                                                              |
+| pbs_host_disk_available                     | The available disk of the local root disk in bytes.                   |                                                                              |
+| pbs_host_disk_total                         | The total disk of the local root disk in bytes.                       |                                                                              |
+| pbs_host_disk_used                          | The used disk of the local root disk in bytes.                        |                                                                              |
+| pbs_host_uptime                             | The uptime of the host.                                               |                                                                              |
+| pbs_host_io_wait                            | The io wait of the host.                                              |                                                                              |
+| pbs_host_load1                              | The load for 1 minute of the host.                                    |                                                                              |
+| pbs_host_load5                              | The load for 5 minutes of the host.                                   |                                                                              |
+| pbs_host_load15                             | The load 15 minutes of the host.                                      |                                                                              |
 
 ## Flags / Environment Variables
 
