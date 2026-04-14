@@ -26,3 +26,12 @@ repos:
     rev: v2.11.4
     hooks:
       - id: golangci-lint
+  - repo: local
+    hooks:
+      - id: gosec
+        name: gosec
+        entry: gosec
+        language: golang
+        additional_dependencies: ['github.com/securego/gosec/v2/cmd/gosec@v2.25.0']
+        args: ["./..."]
+        pass_filenames: false

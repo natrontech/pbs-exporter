@@ -106,7 +106,7 @@ Actions used across the workflows:
 | `google/osv-scanner-action` | osv-scan.yml |
 | `goreleaser/goreleaser-action` | release.yml |
 | `ossf/scorecard-action` | scorecard.yml |
-| `securego/gosec` | gosec.yml |
+| `securego/gosec` | gosec.yml — also update `additional_dependencies` version in [.pre-commit-config.yaml](.pre-commit-config.yaml) |
 | `sigstore/cosign-installer` | release.yml, release-verification.yml |
 | `slsa-framework/slsa-github-generator` | release.yml (**tag only**) |
 | `slsa-framework/slsa-verifier` | release-verification.yml |
@@ -130,4 +130,23 @@ This updates the `rev` fields for all four repos in [.pre-commit-config.yaml](.p
 ```bash
 go build ./...
 go test ./...
+```
+
+---
+
+## Security scanning (gosec)
+
+The CI runs [`securego/gosec`](https://github.com/securego/gosec) via [`.github/workflows/gosec.yml`](.github/workflows/gosec.yml). The same check runs locally via the `local` pre-commit hook in [`.pre-commit-config.yaml`](.pre-commit-config.yaml) (uses `language: golang` to install gosec automatically).
+
+Run manually:
+
+```bash
+go install github.com/securego/gosec/v2/cmd/gosec@latest
+gosec ./...
+```
+
+**Log injection (G706):** Any user-controlled value passed to `log.Printf` must be sanitised before use. Use `strings.ReplaceAll` (gosec-recognised sanitizer) to strip newlines — `strings.NewReplacer(...).Replace(...)` looks equivalent but is **not** on gosec's sanitizer list and will still trigger G706:
+
+```go
+log.Printf("... %s", strings.ReplaceAll(strings.ReplaceAll(userInput, "\n", ""), "\r", ""))
 ```
