@@ -4,19 +4,44 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Zurich"
     commit-message:
       prefix: ":seedling:"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    open-pull-requests-limit: 10
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "tuesday"
+      time: "06:00"
+      timezone: "Europe/Zurich"
     commit-message:
       prefix: ":robot:"
+    labels:
+      - "dependencies"
+      - "go"
+    open-pull-requests-limit: 10
 
   - package-ecosystem: "docker"
-    directory: /
+    directory: "/"
     schedule:
       interval: "weekly"
+      day: "wednesday"
+      time: "06:00"
+      timezone: "Europe/Zurich"
     commit-message:
       prefix: ":robot:"
+    labels:
+      - "dependencies"
+      - "docker"
+    open-pull-requests-limit: 5
