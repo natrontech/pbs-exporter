@@ -17,7 +17,7 @@ DESCRIPTION ?= Export Proxmox Backup Server metrics for Prometheus
 
 .PHONY: go-tidy
 go-tidy:
-	go mod tidy -compat=1.25
+	go mod tidy -compat=1.26
 	@echo "Go modules tidied."
 
 .PHONY: go-update
@@ -35,7 +35,7 @@ go-build:
 # TOOLS #
 #########
 
-KO_VERSION  = v0.18.0
+KO_VERSION  = v0.18.1
 KO = $(shell pwd)/bin/ko
 
 ko:

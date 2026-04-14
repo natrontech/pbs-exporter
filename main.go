@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -966,7 +967,7 @@ func main() {
 
 		// debug
 		if *loglevel == "debug" {
-			log.Printf("DEBUG: Using connection endpoint %s", target)
+			log.Printf("DEBUG: Using connection endpoint %s", strings.ReplaceAll(strings.ReplaceAll(target, "\n", ""), "\r", ""))
 		}
 
 		exporter := NewExporter(target, *username, *apitoken, *apitokenname)
