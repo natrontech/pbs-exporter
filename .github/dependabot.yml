@@ -7,6 +7,8 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Zurich"
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ":seedling:"
     labels:
@@ -25,6 +27,8 @@ updates:
       day: "tuesday"
       time: "06:00"
       timezone: "Europe/Zurich"
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ":robot:"
     labels:
