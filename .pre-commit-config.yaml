@@ -23,7 +23,7 @@ repos:
       - id: go-imports
       - id: go-unit-tests
   - repo: https://github.com/golangci/golangci-lint
-    rev: v2.12.2
+    rev: v2.13.2
     hooks:
       - id: golangci-lint
   - repo: local
@@ -32,6 +32,6 @@ repos:
         name: gosec
         entry: gosec
         language: golang
-        additional_dependencies: ['github.com/securego/gosec/v2/cmd/gosec@v2.25.0']
+        additional_dependencies: ['github.com/securego/gosec/v2/cmd/gosec@v2.29.0']
         args: ["./..."]
         pass_filenames: false

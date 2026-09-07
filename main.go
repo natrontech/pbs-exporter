@@ -273,6 +273,7 @@ type Exporter struct {
 }
 
 func ReadSecretFile(secretfilename string) string {
+	// #nosec G703 -- path comes from operator-set *_FILE env vars (docker secrets), not untrusted input
 	file, err := os.Open(filepath.Clean(secretfilename))
 	// flag to check the file format
 	if err != nil {
