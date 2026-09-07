@@ -64,9 +64,23 @@ gh release view --repo google/ko --json tagName -q '.tagName'
 
 Then update `KO_VERSION` in [Makefile](Makefile) accordingly.
 
-### 6. Update GitHub Actions versions
+### 6. Update the ko base image digest
 
-All workflow files under [.github/workflows/](.github/workflows/) pin actions by commit SHA with a tag comment, e.g.:
+[.ko.yaml](.ko.yaml) pins the base image by digest. Dependabot cannot watch `.ko.yaml`, so this must be updated manually:
+
+```bash
+crane digest cgr.dev/chainguard/static:latest
+```
+
+Then update the `@sha256:...` digest in `defaultBaseImage`:
+
+```yaml
+defaultBaseImage: cgr.dev/chainguard/static:latest@sha256:<digest>
+```
+
+### 7. Update GitHub Actions versions
+
+All workflow files under [.github/workflows/](.github/workflows/) and the composite action [.github/actions/publish-image/action.yaml](.github/actions/publish-image/action.yaml) pin actions by commit SHA with a tag comment, e.g.:
 
 ```yaml
 uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -97,9 +111,10 @@ Actions used across the workflows:
 | `actions/checkout` | all |
 | `actions/dependency-review-action` | dependency-review.yml |
 | `actions/setup-go` | release.yml, golangci-lint.yml |
-| `actions/upload-artifact` | scorecard.yml |
+| `actions/upload-artifact` | scorecard.yml, actions/publish-image/action.yaml |
 | `anchore/sbom-action` | release.yml |
 | `creekorful/goreportcard-action` | release.yml |
+| `CycloneDX/gh-gomod-generate-sbom` | actions/publish-image/action.yaml |
 | `docker/login-action` | release.yml |
 | `github/codeql-action` | codeql.yml, scorecard.yml |
 | `golangci/golangci-lint-action` | golangci-lint.yml — also update `version:` param to match `rev` in [.pre-commit-config.yaml](.pre-commit-config.yaml) |
@@ -111,7 +126,7 @@ Actions used across the workflows:
 | `slsa-framework/slsa-github-generator` | release.yml (**tag only**) |
 | `slsa-framework/slsa-verifier` | release-verification.yml |
 
-### 7. Update pre-commit hooks
+### 8. Update pre-commit hooks
 
 [.pre-commit-config.yaml](.pre-commit-config.yaml) pins the `rev` of each hook repository. Update all revisions to their latest tags:
 
@@ -125,7 +140,7 @@ This updates the `rev` fields for all four repos in [.pre-commit-config.yaml](.p
 - `dnephin/pre-commit-golang`
 - `golangci/golangci-lint`
 
-### 8. Verify
+### 9. Verify
 
 ```bash
 go build ./...
