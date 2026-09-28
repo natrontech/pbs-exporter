@@ -96,17 +96,17 @@ var (
 	snapshot_vm_count = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_count"),
 		"The total number of backups per VM.",
-		[]string{"datastore", "namespace", "vm_id", "vm_name"}, nil,
+		[]string{"datastore", "namespace", "backup_type", "vm_id", "vm_name"}, nil,
 	)
 	snapshot_vm_last_timestamp = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_last_timestamp"),
 		"The timestamp of the last backup of a VM.",
-		[]string{"datastore", "namespace", "vm_id", "vm_name"}, nil,
+		[]string{"datastore", "namespace", "backup_type", "vm_id", "vm_name"}, nil,
 	)
 	snapshot_vm_last_verify = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_last_verify"),
 		"The verify status of the last backup of a VM.",
-		[]string{"datastore", "namespace", "vm_id", "vm_name"}, nil,
+		[]string{"datastore", "namespace", "backup_type", "vm_id", "vm_name"}, nil,
 	)
 	subscription_status = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "host_subscription_status"),
@@ -234,6 +234,7 @@ type NamespaceResponse struct {
 
 type SnapshotResponse struct {
 	Data []struct {
+		BackupType   string `json:"backup-type"`
 		BackupID     string `json:"backup-id"`
 		BackupTime   int64  `json:"backup-time"`
 		VMName       string `json:"comment"`
@@ -822,61 +823,59 @@ func (e *Exporter) getNamespaceMetric(datastore string, namespace string, ch cha
 		snapshot_count, prometheus.GaugeValue, float64(len(response.Data)), datastore, namespace,
 	)
 
-	// set snapshot metrics per vm
-	vmNameMapping := make(map[string]string)
-	vmCount := make(map[string]int)
-	for _, snapshot := range response.Data {
-		// get vm name from snapshot
-		vmID := snapshot.BackupID
-		vmNameMapping[vmID] = snapshot.VMName
-		vmCount[vmID]++
-	}
-
-	// set snapshot metrics per vm
-	for vmID, count := range vmCount {
-		ch <- prometheus.MustNewConstMetric(
-			snapshot_vm_count, prometheus.GaugeValue, float64(count), datastore, namespace, vmID, vmNameMapping[vmID],
-		)
-
-		// find last snapshot with backupID
-		lastTimeStamp, lastVerify, err := findLastSnapshotWithBackupID(response, vmID)
-		if err != nil {
-			return err
-		}
+	// set snapshot metrics per backup group
+	for key, g := range aggregateSnapshots(response) {
 		lastVerifyBool := 0
-		if lastVerify == "ok" {
+		if g.lastVerify == "ok" {
 			lastVerifyBool = 1
 		}
 		ch <- prometheus.MustNewConstMetric(
-			snapshot_vm_last_timestamp, prometheus.GaugeValue, float64(lastTimeStamp), datastore, namespace, vmID, vmNameMapping[vmID],
+			snapshot_vm_count, prometheus.GaugeValue, float64(g.count), datastore, namespace, key.backupType, key.backupID, g.name,
 		)
 		ch <- prometheus.MustNewConstMetric(
-			snapshot_vm_last_verify, prometheus.GaugeValue, float64(lastVerifyBool), datastore, namespace, vmID, vmNameMapping[vmID],
+			snapshot_vm_last_timestamp, prometheus.GaugeValue, float64(g.lastTimeStamp), datastore, namespace, key.backupType, key.backupID, g.name,
+		)
+		ch <- prometheus.MustNewConstMetric(
+			snapshot_vm_last_verify, prometheus.GaugeValue, float64(lastVerifyBool), datastore, namespace, key.backupType, key.backupID, g.name,
 		)
 	}
 
 	return nil
 }
 
-func findLastSnapshotWithBackupID(response SnapshotResponse, backupID string) (int64, string, error) {
-	// find biggest value of backupTime of backupID in response array
-	var lastTimeStamp int64
-	var lastVerify string
+// A PBS backup group is identified by type and ID together: ct/101 and
+// vm/101 are two different guests and must not merge into one series.
+type backupGroup struct {
+	backupType string
+	backupID   string
+}
+
+type groupStats struct {
+	count         int
+	lastTimeStamp int64
+	lastVerify    string
+	name          string
+}
+
+// aggregateSnapshots counts the snapshots of each backup group and keeps the
+// verify state and comment of its newest snapshot.
+func aggregateSnapshots(response SnapshotResponse) map[backupGroup]*groupStats {
+	groups := make(map[backupGroup]*groupStats)
 	for _, snapshot := range response.Data {
-		if snapshot.BackupID == backupID {
-			if snapshot.BackupTime > lastTimeStamp {
-				lastTimeStamp = snapshot.BackupTime
-				lastVerify = snapshot.Verification.State
-			}
+		key := backupGroup{snapshot.BackupType, snapshot.BackupID}
+		g, ok := groups[key]
+		if !ok {
+			g = &groupStats{}
+			groups[key] = g
+		}
+		g.count++
+		if snapshot.BackupTime > g.lastTimeStamp {
+			g.lastTimeStamp = snapshot.BackupTime
+			g.lastVerify = snapshot.Verification.State
+			g.name = snapshot.VMName
 		}
 	}
-
-	// if lastTimeStamp is still 0, no snapshot was found
-	if lastTimeStamp != 0 {
-		return lastTimeStamp, lastVerify, nil
-	}
-
-	return 0, "", fmt.Errorf("ERROR: No snapshot found with backupID %s", backupID)
+	return groups
 }
 
 func main() {
