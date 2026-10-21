@@ -52,6 +52,8 @@ var (
 		"Proxmox Backup Server API token name")
 	timeout = flag.String("pbs.timeout", "5s",
 		"Proxmox Backup Server timeout")
+	writeTimeout = flag.String("pbs.write-timeout", "10s",
+		"Maximum duration of a scrape before the metrics response is aborted")
 	insecure = flag.String("pbs.insecure", "false",
 		"Proxmox Backup Server insecure")
 	metricsPath = flag.String("pbs.metrics-path", "/metrics",
@@ -921,6 +923,9 @@ func main() {
 	if os.Getenv("PBS_TIMEOUT") != "" {
 		*timeout = os.Getenv("PBS_TIMEOUT")
 	}
+	if os.Getenv("PBS_WRITE_TIMEOUT") != "" {
+		*writeTimeout = os.Getenv("PBS_WRITE_TIMEOUT")
+	}
 	if os.Getenv("PBS_INSECURE") != "" {
 		*insecure = os.Getenv("PBS_INSECURE")
 	}
@@ -949,6 +954,12 @@ func main() {
 	}
 	client.Timeout = timeoutDuration
 
+	// set write timeout of the metrics endpoint
+	writeTimeoutDuration, err := time.ParseDuration(*writeTimeout)
+	if err != nil {
+		log.Fatalf("ERROR: Unable to parse write timeout: %s", err)
+	}
+
 	// debug
 	if *loglevel == "debug" {
 		log.Printf("DEBUG: Using connection endpoint: %s", *endpoint)
@@ -956,6 +967,7 @@ func main() {
 		log.Printf("DEBUG: Using connection apitoken: %s", *apitoken)
 		log.Printf("DEBUG: Using connection apitokenname: %s", *apitokenname)
 		log.Printf("DEBUG: Using connection timeout: %s", client.Timeout)
+		log.Printf("DEBUG: Using write timeout: %s", writeTimeoutDuration)
 		log.Printf("DEBUG: Using connection insecure: %t", tr.TLSClientConfig.InsecureSkipVerify)
 		log.Printf("DEBUG: Using metrics path: %s", *metricsPath)
 		log.Printf("DEBUG: Using listen address: %s", *listenAddress)
@@ -1016,7 +1028,7 @@ func main() {
 		Addr:         *listenAddress,
 		Handler:      nil,
 		ReadTimeout:  time.Second * 10,
-		WriteTimeout: time.Second * 10,
+		WriteTimeout: writeTimeoutDuration,
 	}
 	log.Fatal(server.ListenAndServe())
 }

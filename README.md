@@ -61,6 +61,7 @@ You can use the following flags to configure the exporter. All flags can also be
 | `pbs.endpoint`       | `PBS_ENDPOINT`       | Address of the Proxmox Backup Server                 | `http://localhost:8007` (if no parameter `target` set) |
 | `pbs.username`       | `PBS_USERNAME`       | Username to use for authentication                   | `root@pam`                                             |
 | `pbs.timeout`        | `PBS_TIMEOUT`        | Timeout for requests to Proxmox Backup Server        | `5s`                                                   |
+| `pbs.write-timeout`  | `PBS_WRITE_TIMEOUT`  | Maximum duration of a scrape (all requests to PBS)   | `10s`                                                  |
 | `pbs.insecure`       | `PBS_INSECURE`       | Disable TLS certificate verification                 | `false`                                                |
 | `pbs.metrics-path`   | `PBS_METRICS_PATH`   | Path under which to expose metrics                   | `/metrics`                                             |
 | `pbs.listen-address` | `PBS_LISTEN_ADDRESS` | Address to listen on for web interface and telemetry | `:10019`                                               |
