@@ -1000,14 +1000,16 @@ func main() {
 
 		exporter := NewExporter(target, *username, *apitoken, *apitokenname)
 
-		// catch if register of exporter fails
-		err := prometheus.Register(exporter)
-		if err != nil {
-			// if register fails, we log the error and return
+		reg := prometheus.NewRegistry()
+		if err := reg.Register(exporter); err != nil {
 			log.Printf("ERROR: %s", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		promhttp.Handler().ServeHTTP(w, r) // Serve the metrics
-		prometheus.Unregister(exporter)    // Clean up after serving
+		promhttp.InstrumentMetricHandler(
+			prometheus.DefaultRegisterer,
+			promhttp.HandlerFor(prometheus.Gatherers{prometheus.DefaultGatherer, reg}, promhttp.HandlerOpts{}),
+		).ServeHTTP(w, r)
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
