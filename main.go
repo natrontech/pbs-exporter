@@ -943,6 +943,7 @@ func main() {
 
 	// set insecure
 	if insecureBool {
+		// #nosec G402 -- operator opt-in via --pbs.insecure / PBS_INSECURE for self-signed PBS certificates, off by default
 		tr.TLSClientConfig.InsecureSkipVerify = true
 	}
 
