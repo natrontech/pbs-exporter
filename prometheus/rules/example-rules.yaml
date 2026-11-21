@@ -49,6 +49,17 @@ groups:
           summary: Scheduled PBS job overdue
           description: "{{ $labels.type }} job {{ $labels.id }} on datastore {{ $labels.datastore }} did not run within an hour of its scheduled time."
 
+      # A job stuck mid-run: alert on the age of the current run instead of a
+      # long for:, which any scrape gap would reset.
+      - alert: ProxmoxBackupJobStuck
+        expr: "time() - pbs_job_last_run_start_timestamp_seconds > 12*3600 and on(type,id,datastore) pbs_job_running == 1"
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Scheduled PBS job stuck
+          description: "{{ $labels.type }} job {{ $labels.id }} on datastore {{ $labels.datastore }} is running for more than 12 hours."
+
       - alert: ProxmoxBackupPoolDiskOutOfSpace
         expr: "pbs_used / pbs_size * 100 > 90"
         for: 2m

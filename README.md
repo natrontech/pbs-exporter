@@ -28,6 +28,7 @@ Metrics are retrieved using the [Proxmox Backup Server API](https://pbs.proxmox.
 | pbs_snapshot_vm_last_verify                 | The verify status of the last backup of a VM.                         | `datastore`, `namespace`, `backup_type`, `vm_id`, `vm_name`                              |
 | pbs_job_running                             | Whether the scheduled job is currently running (1) or finished (0). Absent if the job never ran; not exposed for gc jobs. | `type`, `id`, `datastore` |
 | pbs_job_last_run_success                    | Whether the last run of the scheduled job succeeded (1 = OK or warnings, 0 = error or unknown). | `type`, `id`, `datastore`                                                             |
+| pbs_job_last_run_start_timestamp_seconds    | The start time of the last or current run of the scheduled job in unix seconds, parsed from the task upid. | `type`, `id`, `datastore`                                                        |
 | pbs_job_last_run_end_timestamp_seconds      | The end time of the last run of the scheduled job in unix seconds.    | `type`, `id`, `datastore`                                                                |
 | pbs_job_next_run_timestamp_seconds          | The estimated next run of the scheduled job in unix seconds.          | `type`, `id`, `datastore`                                                                |
 | pbs_host_subscription_due_timestamp_seconds | The subscription due timestamp of the host in seconds.                | `productname`                                                                |
@@ -133,6 +134,8 @@ The exporter queries the state of the scheduled verify, sync, prune and garbage 
 Sync jobs are queried with `sync-direction=all` so push jobs are included (PBS >= 3.3). PBS versions older than 3.3 reject the unknown parameter with 400; the exporter then logs the error and reports the other job types.
 
 PBS omits `last-run-state` and `last-run-endtime` while a job is running or when it never ran, so `pbs_job_last_run_success` and `pbs_job_last_run_end_timestamp_seconds` are absent in that case. `pbs_job_running` detects a running job from a `last-run-upid` without an end time; it is not exposed for gc jobs, because their `upid` can also be a stale fallback after the task log was lost (which would report a finished job as running). `next-run` is absent for jobs without a schedule and for disabled prune jobs.
+
+`pbs_job_last_run_start_timestamp_seconds` is parsed from the hex start time inside the task upid (`UPID:node:pid:pstart:task_id:starttime:worker_type:worker_id:auth_id:`) and is exposed whenever a upid is present, including running jobs. For gc jobs it comes from the `upid` field, which may be the `.gc-status` fallback, so treat it as the start of the last known run. A malformed upid is logged and its series skipped.
 
 A `last-run-state` of `OK` or `WARNINGS: N` counts as successful; any other value (free-text errors, `unknown`) is reported as `pbs_job_last_run_success 0`.
 

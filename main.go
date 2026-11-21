@@ -128,6 +128,11 @@ var (
 		"Whether the last run of the scheduled job succeeded (1 = OK or warnings, 0 = error or unknown). Absent if the job never ran or is currently running.",
 		[]string{"type", "id", "datastore"}, nil,
 	)
+	job_last_run_start_timestamp_seconds = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "job_last_run_start_timestamp_seconds"),
+		"The start time of the last or current run of the scheduled job in unix seconds, parsed from the task upid.",
+		[]string{"type", "id", "datastore"}, nil,
+	)
 	job_last_run_end_timestamp_seconds = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "job_last_run_end_timestamp_seconds"),
 		"The end time of the last run of the scheduled job in unix seconds. Absent if the job never ran or is currently running.",
@@ -286,6 +291,7 @@ type ScheduledJob struct {
 	LastRunEndtime *int64  `json:"last-run-endtime"`
 	NextRun        *int64  `json:"next-run"`
 	LastRunUpid    *string `json:"last-run-upid"`
+	Upid           *string `json:"upid"` // gc jobs expose the task upid as "upid"
 }
 
 type ScheduledJobsResponse struct {
@@ -359,6 +365,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- snapshot_vm_last_verify
 	ch <- job_running
 	ch <- job_last_run_success
+	ch <- job_last_run_start_timestamp_seconds
 	ch <- job_last_run_end_timestamp_seconds
 	ch <- job_next_run_timestamp_seconds
 	ch <- subscription_info
@@ -988,6 +995,23 @@ func (e *Exporter) getJobsMetric(jobType string, jobsApi string, ch chan<- prome
 			)
 		}
 
+		// the start time of the last or current run is encoded in the task
+		// upid; gc jobs expose it as "upid", the others as "last-run-upid"
+		upid := job.LastRunUpid
+		if job.Upid != nil {
+			upid = job.Upid
+		}
+		if upid != nil {
+			starttime, err := parseUpidStarttime(*upid)
+			if err != nil {
+				log.Printf("ERROR: Failed to parse upid of %s job %s, skip last run start time: %s", jobType, id, err)
+			} else {
+				ch <- prometheus.MustNewConstMetric(
+					job_last_run_start_timestamp_seconds, prometheus.GaugeValue, float64(starttime), jobType, id, job.Store,
+				)
+			}
+		}
+
 		// the last-run-state is only set once a run finished: "OK" and
 		// "WARNINGS: N" count as success, every other state (free-text
 		// errors, "unknown") as failed
@@ -1015,6 +1039,22 @@ func (e *Exporter) getJobsMetric(jobType string, jobsApi string, ch chan<- prome
 	}
 
 	return nil
+}
+
+// parseUpidStarttime extracts the task start time (unix seconds) from a PBS
+// task upid, whose format is
+// UPID:node:pid:pstart:task_id:starttime:worker_type:worker_id:auth_id:
+// with the fields encoded as hex (see UPID in proxmox-schema).
+func parseUpidStarttime(upid string) (int64, error) {
+	fields := strings.Split(upid, ":")
+	if len(fields) < 6 {
+		return 0, fmt.Errorf("upid %q has %d fields, want at least 6", upid, len(fields))
+	}
+	starttime, err := strconv.ParseInt(fields[5], 16, 64)
+	if err != nil {
+		return 0, fmt.Errorf("upid %q has no hex start time in field 6", upid)
+	}
+	return starttime, nil
 }
 
 // A PBS backup group is identified by type and ID together: ct/101 and

@@ -37,33 +37,36 @@ func TestAggregateSnapshotsKeepsTypesApart(t *testing.T) {
 
 // Fixtures recreated from real PBS 4.2.9 responses of the admin job
 // endpoints (no secrets, example datastores, job ids within the 32 chars
-// PBS allows); timestamps are unix seconds.
+// PBS allows); timestamps are unix seconds. The upids follow the PBS format
+// UPID:node:pid:pstart:task_id:starttime:worker_type:worker_id:auth_id:
+// with the start time as the sixth field in hex.
 const verifyJobsBody = `{"data":[
-	{"id":"v-2bf845d8-f2c5","store":"store1","schedule":"daily","last-run-state":"OK","last-run-endtime":1763011200,"next-run":1763097600,"last-run-upid":"UPID:pbs:000000000000.0000.00:verificationjob:store1:v-2bf845d8-f2c5:root@pam:"},
-	{"id":"v-3d13cf0e-8b71","store":"store2","schedule":"sat 18:15","last-run-state":"verify failed - task unexpectedly no longer running","last-run-endtime":1762950000,"next-run":1763061300,"last-run-upid":"UPID:pbs:000000000000.0000.00:verificationjob:store2:v-3d13cf0e-8b71:root@pam:"},
-	{"id":"v-9a1b7c2d-4e5f","store":"store1","schedule":"daily","next-run":1763097600}
+	{"id":"v-2bf845d8-f2c5","store":"store1","schedule":"daily","last-run-state":"OK","last-run-endtime":1763011200,"next-run":1763097600,"last-run-upid":"UPID:pbs:00004F37:0039E469:0000002A:69155C70:verificationjob:store1:v-2bf845d8-f2c5:root@pam:"},
+	{"id":"v-3d13cf0e-8b71","store":"store2","schedule":"sat 18:15","last-run-state":"verify failed - task unexpectedly no longer running","last-run-endtime":1762950000,"next-run":1763061300,"last-run-upid":"UPID:pbs:00004F37:0039E469:0000002B:69146D60:verificationjob:store2:v-3d13cf0e-8b71:root@pam:"},
+	{"id":"v-9a1b7c2d-4e5f","store":"store1","schedule":"daily","next-run":1763097600},
+	{"id":"v-5e6f7a8b-9c0d","store":"store2","schedule":"daily","last-run-state":"OK","last-run-endtime":1762951200,"next-run":1763061300,"last-run-upid":"not-a-upid"}
 ]}`
 
 // The first sync job is currently running: PBS reports no last-run-state and
 // no last-run-endtime until it finishes. The second one has no schedule (a
 // manual job), so there is no next-run, and its task state is unknown.
 const syncJobsBody = `{"data":[
-	{"id":"s-0c9b01e0-2376","store":"store2","schedule":"daily","next-run":1763097600,"last-run-upid":"UPID:pbs:000000000000.0000.00:syncjob:s-0c9b01e0-2376:root@pam:"},
-	{"id":"s-7f3a5b1c-9d2e","store":"store1","last-run-state":"unknown","last-run-endtime":1762956000,"last-run-upid":"UPID:pbs:000000000000.0000.00:syncjob:s-7f3a5b1c-9d2e:root@pam:"}
+	{"id":"s-0c9b01e0-2376","store":"store2","schedule":"daily","next-run":1763097600,"last-run-upid":"UPID:pbs:00004F37:0039E469:0000002C:6916ADF0:syncjob:s-0c9b01e0-2376:root@pam:"},
+	{"id":"s-7f3a5b1c-9d2e","store":"store1","last-run-state":"unknown","last-run-endtime":1762956000,"last-run-upid":"UPID:pbs:00004F37:0039E469:0000002D:691484D0:syncjob:s-7f3a5b1c-9d2e:root@pam:"}
 ]}`
 
 // The second prune job finished with warnings, which counts as success.
 const pruneJobsBody = `{"data":[
-	{"id":"default-store1-13b8b44b-1e45-435","store":"store1","schedule":"daily","last-run-state":"OK","last-run-endtime":1763010000,"next-run":1763097600,"last-run-upid":"UPID:pbs:000000000000.0000.00:prunejob:store1:default-store1-13b8b44b-1e45-435:root@pam:"},
-	{"id":"default-store2-27c3d99e-91ab-2f4","store":"store2","schedule":"sat 18:15","last-run-state":"WARNINGS: 2","last-run-endtime":1762950000,"next-run":1763061300,"last-run-upid":"UPID:pbs:000000000000.0000.00:prunejob:store2:default-store2-27c3d99e-91ab-2f4:root@pam:"}
+	{"id":"default-store1-13b8b44b-1e45-435","store":"store1","schedule":"daily","last-run-state":"OK","last-run-endtime":1763010000,"next-run":1763097600,"last-run-upid":"UPID:pbs:00004F37:0039E469:0000002E:691557C0:prunejob:store1:default-store1-13b8b44b-1e45-435:root@pam:"},
+	{"id":"default-store2-27c3d99e-91ab-2f4","store":"store2","schedule":"sat 18:15","last-run-state":"WARNINGS: 2","last-run-endtime":1762950000,"next-run":1763061300,"last-run-upid":"UPID:pbs:00004F37:0039E469:0000002F:69146D60:prunejob:store2:default-store2-27c3d99e-91ab-2f4:root@pam:"}
 ]}`
 
 // gc jobs have no id (the datastore identifies them) and expose the task
 // upid as "upid", not as "last-run-upid". The first job finished, the second
 // one is currently running.
 const gcJobsBody = `{"data":[
-	{"store":"store2","schedule":"daily","last-run-state":"OK","last-run-endtime":1763000400,"next-run":1763097600,"upid":"UPID:pbs:000000000000.0000.00:garbage_collection:store2:root@pam:"},
-	{"store":"store1","schedule":"daily","next-run":1763097600,"upid":"UPID:pbs:000000000000.0000.00:garbage_collection:store1:root@pam:"}
+	{"store":"store2","schedule":"daily","last-run-state":"OK","last-run-endtime":1763000400,"next-run":1763097600,"upid":"UPID:pbs:00004F37:0039E469:00000030:69153240:garbage_collection:store2:root@pam:"},
+	{"store":"store1","schedule":"daily","next-run":1763097600,"upid":"UPID:pbs:00004F37:0039E469:00000031:6916ADF0:garbage_collection:store1:root@pam:"}
 ]}`
 
 // jobSample identifies one emitted job series by metric name and labels.
@@ -92,10 +95,11 @@ func collectJobSamples(t *testing.T, handler http.Handler) map[jobSample]float64
 	close(ch)
 
 	names := map[*prometheus.Desc]string{
-		job_running:                        "pbs_job_running",
-		job_last_run_success:               "pbs_job_last_run_success",
-		job_last_run_end_timestamp_seconds: "pbs_job_last_run_end_timestamp_seconds",
-		job_next_run_timestamp_seconds:     "pbs_job_next_run_timestamp_seconds",
+		job_running:                          "pbs_job_running",
+		job_last_run_success:                 "pbs_job_last_run_success",
+		job_last_run_start_timestamp_seconds: "pbs_job_last_run_start_timestamp_seconds",
+		job_last_run_end_timestamp_seconds:   "pbs_job_last_run_end_timestamp_seconds",
+		job_next_run_timestamp_seconds:       "pbs_job_next_run_timestamp_seconds",
 	}
 	samples := make(map[jobSample]float64)
 	for m := range ch {
@@ -149,38 +153,51 @@ func jobsHandler(t *testing.T, verify, sync, prune, gc string) http.Handler {
 
 // TestGetJobMetrics covers the job states PBS reports: OK, warnings, an
 // error string, unknown, never-run and running (where the last-run series
-// must be absent), jobs without a schedule (no next-run), and the gc
-// specifics (no id, "upid" key, no running state).
+// must be absent), jobs without a schedule (no next-run), the last-run
+// start time parsed from the upid, and the gc specifics (no id, "upid"
+// key, no running state).
 func TestGetJobMetrics(t *testing.T) {
 	samples := collectJobSamples(t, jobsHandler(t, verifyJobsBody, syncJobsBody, pruneJobsBody, gcJobsBody))
 
 	want := map[jobSample]float64{
 		// verify: OK
-		{"pbs_job_running", "verify", "v-2bf845d8-f2c5", "store1"}:                        0,
-		{"pbs_job_last_run_success", "verify", "v-2bf845d8-f2c5", "store1"}:               1,
-		{"pbs_job_last_run_end_timestamp_seconds", "verify", "v-2bf845d8-f2c5", "store1"}: 1763011200,
-		{"pbs_job_next_run_timestamp_seconds", "verify", "v-2bf845d8-f2c5", "store1"}:     1763097600,
+		{"pbs_job_running", "verify", "v-2bf845d8-f2c5", "store1"}:                          0,
+		{"pbs_job_last_run_success", "verify", "v-2bf845d8-f2c5", "store1"}:                 1,
+		{"pbs_job_last_run_start_timestamp_seconds", "verify", "v-2bf845d8-f2c5", "store1"}: 1763007600,
+		{"pbs_job_last_run_end_timestamp_seconds", "verify", "v-2bf845d8-f2c5", "store1"}:   1763011200,
+		{"pbs_job_next_run_timestamp_seconds", "verify", "v-2bf845d8-f2c5", "store1"}:       1763097600,
 		// verify: error string counts as failed
-		{"pbs_job_running", "verify", "v-3d13cf0e-8b71", "store2"}:                        0,
-		{"pbs_job_last_run_success", "verify", "v-3d13cf0e-8b71", "store2"}:               0,
-		{"pbs_job_last_run_end_timestamp_seconds", "verify", "v-3d13cf0e-8b71", "store2"}: 1762950000,
+		{"pbs_job_running", "verify", "v-3d13cf0e-8b71", "store2"}:                          0,
+		{"pbs_job_last_run_success", "verify", "v-3d13cf0e-8b71", "store2"}:                 0,
+		{"pbs_job_last_run_start_timestamp_seconds", "verify", "v-3d13cf0e-8b71", "store2"}: 1762946400,
+		{"pbs_job_last_run_end_timestamp_seconds", "verify", "v-3d13cf0e-8b71", "store2"}:   1762950000,
 		// verify: never ran (no last-run series, but a next-run)
 		{"pbs_job_next_run_timestamp_seconds", "verify", "v-9a1b7c2d-4e5f", "store1"}: 1763097600,
-		// sync: running (upid without endtime), last-run series absent
-		{"pbs_job_running", "sync", "s-0c9b01e0-2376", "store2"}:                    1,
-		{"pbs_job_next_run_timestamp_seconds", "sync", "s-0c9b01e0-2376", "store2"}: 1763097600,
+		// verify: malformed upid, only the start time series is skipped
+		{"pbs_job_running", "verify", "v-5e6f7a8b-9c0d", "store2"}:                        0,
+		{"pbs_job_last_run_success", "verify", "v-5e6f7a8b-9c0d", "store2"}:               1,
+		{"pbs_job_last_run_end_timestamp_seconds", "verify", "v-5e6f7a8b-9c0d", "store2"}: 1762951200,
+		{"pbs_job_next_run_timestamp_seconds", "verify", "v-5e6f7a8b-9c0d", "store2"}:     1763061300,
+		// sync: running (upid without endtime), start time from the upid
+		{"pbs_job_running", "sync", "s-0c9b01e0-2376", "store2"}:                          1,
+		{"pbs_job_last_run_start_timestamp_seconds", "sync", "s-0c9b01e0-2376", "store2"}: 1763094000,
+		{"pbs_job_next_run_timestamp_seconds", "sync", "s-0c9b01e0-2376", "store2"}:       1763097600,
 		// sync: no schedule (manual job, no next-run), unknown task state
-		{"pbs_job_running", "sync", "s-7f3a5b1c-9d2e", "store1"}:                        0,
-		{"pbs_job_last_run_success", "sync", "s-7f3a5b1c-9d2e", "store1"}:               0,
-		{"pbs_job_last_run_end_timestamp_seconds", "sync", "s-7f3a5b1c-9d2e", "store1"}: 1762956000,
+		{"pbs_job_running", "sync", "s-7f3a5b1c-9d2e", "store1"}:                          0,
+		{"pbs_job_last_run_success", "sync", "s-7f3a5b1c-9d2e", "store1"}:                 0,
+		{"pbs_job_last_run_start_timestamp_seconds", "sync", "s-7f3a5b1c-9d2e", "store1"}: 1762952400,
+		{"pbs_job_last_run_end_timestamp_seconds", "sync", "s-7f3a5b1c-9d2e", "store1"}:   1762956000,
 		// prune: OK and WARNINGS both count as success
 		{"pbs_job_last_run_success", "prune", "default-store1-13b8b44b-1e45-435", "store1"}: 1,
 		{"pbs_job_last_run_success", "prune", "default-store2-27c3d99e-91ab-2f4", "store2"}: 1,
-		// gc: no id, the datastore is used as id
-		{"pbs_job_last_run_success", "gc", "store2", "store2"}:               1,
-		{"pbs_job_last_run_end_timestamp_seconds", "gc", "store2", "store2"}: 1763000400,
-		{"pbs_job_next_run_timestamp_seconds", "gc", "store2", "store2"}:     1763097600,
-		{"pbs_job_next_run_timestamp_seconds", "gc", "store1", "store1"}:     1763097600,
+		// gc: no id, the datastore is used as id; the start time comes from
+		// the "upid" field
+		{"pbs_job_last_run_success", "gc", "store2", "store2"}:                 1,
+		{"pbs_job_last_run_start_timestamp_seconds", "gc", "store2", "store2"}: 1762996800,
+		{"pbs_job_last_run_end_timestamp_seconds", "gc", "store2", "store2"}:   1763000400,
+		{"pbs_job_next_run_timestamp_seconds", "gc", "store2", "store2"}:       1763097600,
+		{"pbs_job_last_run_start_timestamp_seconds", "gc", "store1", "store1"}: 1763094000,
+		{"pbs_job_next_run_timestamp_seconds", "gc", "store1", "store1"}:       1763097600,
 	}
 	for sample, value := range want {
 		if got, ok := samples[sample]; !ok {
@@ -197,7 +214,10 @@ func TestGetJobMetrics(t *testing.T) {
 		// never-run verify job: no last-run series at all
 		{"pbs_job_running", "verify", "v-9a1b7c2d-4e5f", "store1"},
 		{"pbs_job_last_run_success", "verify", "v-9a1b7c2d-4e5f", "store1"},
+		{"pbs_job_last_run_start_timestamp_seconds", "verify", "v-9a1b7c2d-4e5f", "store1"},
 		{"pbs_job_last_run_end_timestamp_seconds", "verify", "v-9a1b7c2d-4e5f", "store1"},
+		// malformed upid: start time skipped, other series unaffected
+		{"pbs_job_last_run_start_timestamp_seconds", "verify", "v-5e6f7a8b-9c0d", "store2"},
 		// sync job without schedule: no next-run
 		{"pbs_job_next_run_timestamp_seconds", "sync", "s-7f3a5b1c-9d2e", "store1"},
 		// gc jobs expose no last-run-upid and get no running state, even
