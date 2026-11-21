@@ -26,6 +26,10 @@ Metrics are retrieved using the [Proxmox Backup Server API](https://pbs.proxmox.
 | pbs_snapshot_vm_count                       | The total number of backups per VM.                                   | `datastore`, `namespace`, `backup_type`, `vm_id`, `vm_name`                              |
 | pbs_snapshot_vm_last_timestamp              | The timestamp of the last backup of a VM.                             | `datastore`, `namespace`, `backup_type`, `vm_id`, `vm_name`                              |
 | pbs_snapshot_vm_last_verify                 | The verify status of the last backup of a VM.                         | `datastore`, `namespace`, `backup_type`, `vm_id`, `vm_name`                              |
+| pbs_job_running                             | Whether the scheduled job is currently running (1) or finished (0). Absent if the job never ran; not exposed for gc jobs. | `type`, `id`, `datastore` |
+| pbs_job_last_run_success                    | Whether the last run of the scheduled job succeeded (1 = OK or warnings, 0 = error or unknown). | `type`, `id`, `datastore`                                                             |
+| pbs_job_last_run_end_timestamp_seconds      | The end time of the last run of the scheduled job in unix seconds.    | `type`, `id`, `datastore`                                                                |
+| pbs_job_next_run_timestamp_seconds          | The estimated next run of the scheduled job in unix seconds.          | `type`, `id`, `datastore`                                                                |
 | pbs_host_subscription_due_timestamp_seconds | The subscription due timestamp of the host in seconds.                | `productname`                                                                |
 | pbs_host_subscription_info                  | The subscription info of the host.                                    | `productname`, `status`                                                      |
 | pbs_host_subscription_status                | Indicates if the subscription is in the state indicated by the label. | `status` = (`active`\|`expired`\|`invalid`\|`new`\|`notfound`\|`superseded`) |
@@ -121,6 +125,29 @@ You find examples for Prometheus static configuration in the [prometheus/static-
 ## Node metrics
 
 According to the [api documentation](https://pbs.proxmox.com/docs/api-viewer/index.html#/nodes/{node}), we have to provide a node name (won't work with the node ip), but it seems to work with any name, so we just use "localhost" for the request. This setup is tested with one proxmox backup server host.
+
+## Scheduled jobs
+
+The exporter queries the state of the scheduled verify, sync, prune and garbage collection jobs (`/admin/verify`, `/admin/sync`, `/admin/prune` and `/admin/gc`) and reports it per job with the labels `type` (`verify`\|`sync`\|`prune`\|`gc`), `id` (the job id; for gc jobs, which have no id, the datastore name) and `datastore`.
+
+Sync jobs are queried with `sync-direction=all` so push jobs are included (PBS >= 3.3). PBS versions older than 3.3 reject the unknown parameter with 400; the exporter then logs the error and reports the other job types.
+
+PBS omits `last-run-state` and `last-run-endtime` while a job is running or when it never ran, so `pbs_job_last_run_success` and `pbs_job_last_run_end_timestamp_seconds` are absent in that case. `pbs_job_running` detects a running job from a `last-run-upid` without an end time; it is not exposed for gc jobs, because their `upid` can also be a stale fallback after the task log was lost (which would report a finished job as running). `next-run` is absent for jobs without a schedule and for disabled prune jobs.
+
+A `last-run-state` of `OK` or `WARNINGS: N` counts as successful; any other value (free-text errors, `unknown`) is reported as `pbs_job_last_run_success 0`.
+
+If one of the job endpoints fails (for example a 404 for the gc endpoint on PBS versions older than 3.2, which do not have it), the exporter logs the error and still reports the other job types and metrics.
+
+### Required privileges
+
+| Endpoint        | Minimum privilege on `/datastore/{store}`                           |
+| --------------- | -------------------------------------------------------------------- |
+| `/admin/verify` | Datastore.Audit (or Datastore.Verify)                                |
+| `/admin/sync`   | Datastore.Audit on the job's local datastore                         |
+| `/admin/prune`  | Datastore.Audit (or Datastore.Modify)                                |
+| `/admin/gc`     | Datastore.Audit (or Datastore.Backup)                                |
+
+PBS filters the job lists by the privileges of the API token instead of failing the request: a token that lacks a privilege simply sees fewer (or no) jobs of that type. The builtin `Audit` role on `/` is enough for verify, prune and gc jobs and for local sync jobs. Sync jobs that use a remote are additionally filtered by `Remote.Audit`, which the `Audit` role does not include: grant the builtin `RemoteAudit` role on `/remote` (or the specific remote) so they are listed.
 
 ## Supported versions
 
