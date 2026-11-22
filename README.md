@@ -65,6 +65,25 @@ You can use the following flags to configure the exporter. All flags can also be
 | `pbs.insecure`       | `PBS_INSECURE`       | Disable TLS certificate verification                 | `false`                                                |
 | `pbs.metrics-path`   | `PBS_METRICS_PATH`   | Path under which to expose metrics                   | `/metrics`                                             |
 | `pbs.listen-address` | `PBS_LISTEN_ADDRESS` | Address to listen on for web interface and telemetry | `:10019`                                               |
+| `web.config.file`    | `PBS_WEB_CONFIG_FILE` | Path to a web configuration file enabling TLS or authentication (see below) |                                         |
+
+### TLS and authentication
+
+The exporter can serve its endpoints over TLS, require client certificates (mutual TLS) and require basic authentication. Set `web.config.file` (or `PBS_WEB_CONFIG_FILE`) to a [Prometheus exporter-toolkit web configuration file](https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md). Without it the exporter serves plain HTTP, as before.
+
+Example, TLS with client certificates restricted to one client:
+
+```yaml
+tls_server_config:
+  cert_file: /etc/pbs-exporter/tls/cert.pem
+  key_file: /etc/pbs-exporter/tls/key.pem
+  client_auth_type: RequireAndVerifyClientCert
+  client_ca_file: /etc/pbs-exporter/tls/client-ca.pem
+  client_allowed_sans:
+    - prometheus.example.com
+```
+
+The certificate and key files are read again on each connection, so a renewed certificate needs no restart.
 
 ### Running on PBS (systemd)
 The Prometheus-pbs-exporter can also simply be installed on a Proxmox Backup Server instead of spawning an additional Docker container.
