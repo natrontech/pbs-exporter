@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/exporter-toolkit/web"
 )
 
 const promNamespace = "pbs"
@@ -62,6 +64,8 @@ var (
 		"Address on which to expose metrics")
 	loglevel = flag.String("pbs.loglevel", "info",
 		"Loglevel")
+	webConfigFile = flag.String("web.config.file", "",
+		"Path to a configuration file that can enable TLS or authentication. See: https://github.com/prometheus/exporter-toolkit/blob/master/docs/web-configuration.md")
 	showVersion = flag.Bool("version", false, "Show version and exit")
 
 	// Metrics
@@ -934,6 +938,9 @@ func main() {
 	if os.Getenv("PBS_LISTEN_ADDRESS") != "" {
 		*listenAddress = os.Getenv("PBS_LISTEN_ADDRESS")
 	}
+	if os.Getenv("PBS_WEB_CONFIG_FILE") != "" {
+		*webConfigFile = os.Getenv("PBS_WEB_CONFIG_FILE")
+	}
 
 	// convert flags
 	insecureBool, err := strconv.ParseBool(*insecure)
@@ -1032,5 +1039,15 @@ func main() {
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: writeTimeoutDuration,
 	}
-	log.Fatal(server.ListenAndServe())
+	// TLS, client certificates and basic auth come from the exporter-toolkit web configuration file, when given;
+	// without one the exporter serves plain HTTP as before.
+	listenAddresses := []string{*listenAddress}
+	systemdSocket := false
+	webFlags := &web.FlagConfig{
+		WebListenAddresses: &listenAddresses,
+		WebSystemdSocket:   &systemdSocket,
+		WebConfigFile:      webConfigFile,
+	}
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	log.Fatal(web.ListenAndServe(server, webFlags, logger))
 }
