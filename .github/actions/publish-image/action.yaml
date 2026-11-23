@@ -48,13 +48,15 @@ runs:
         REGISTRY: ${{ inputs.registry }}
         REPO: ${{ inputs.repository }}
         REGISTRY_PASSWORD: ${{ inputs.registry-password }}
+        VERSION: ${{ inputs.version }}
+        MAKE_TARGET: ${{ inputs.makefile-target }}
       run: |
         set -euo pipefail
         # registry repositories must be lowercase; forks may have uppercase owners
         export REPO="${REPO,,}"
         # assign first: inside echo's argument a failing make would not stop the step
-        ref="$(VERSION=${{ inputs.version }} make ${{ inputs.makefile-target }})"
-        echo "digest=$ref" >> $GITHUB_OUTPUT
+        ref="$(make "$MAKE_TARGET")"
+        echo "digest=$ref" >> "$GITHUB_OUTPUT"
     - uses: CycloneDX/gh-gomod-generate-sbom@efc74245d6802c8cefd925620515442756c70d8f # v2.0.0
       with:
         version: v1
