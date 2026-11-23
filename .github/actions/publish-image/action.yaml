@@ -35,6 +35,9 @@ outputs:
   digest:
     value: ${{ steps.digest.outputs.digest }}
     description: published image digest
+  image:
+    value: ${{ steps.digest.outputs.image }}
+    description: published image repository (lowercase, as pushed)
 
 runs:
   using: composite
@@ -47,7 +50,11 @@ runs:
         REGISTRY_PASSWORD: ${{ inputs.registry-password }}
       run: |
         set -euo pipefail
-        echo "digest=$(VERSION=${{ inputs.version }} make ${{ inputs.makefile-target }})" >> $GITHUB_OUTPUT
+        # registry repositories must be lowercase; forks may have uppercase owners
+        export REPO="${REPO,,}"
+        # assign first: inside echo's argument a failing make would not stop the step
+        ref="$(VERSION=${{ inputs.version }} make ${{ inputs.makefile-target }})"
+        echo "digest=$ref" >> $GITHUB_OUTPUT
     - uses: CycloneDX/gh-gomod-generate-sbom@efc74245d6802c8cefd925620515442756c70d8f # v2.0.0
       with:
         version: v1
@@ -80,3 +87,4 @@ runs:
         DIGEST=$(echo ${{ steps.ko-publish.outputs.digest }} | cut -d '@' -f2)
         echo "Digest from image is: $DIGEST"
         echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+        echo "image=$(echo ${{ steps.ko-publish.outputs.digest }} | cut -d '@' -f1)" >> $GITHUB_OUTPUT
