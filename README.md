@@ -53,19 +53,19 @@ $ ./pbs-exporter -help
 
 You can use the following flags to configure the exporter. All flags can also be set using environment variables. Environment variables take precedence over flags.
 
-| Flag                 | Environment Variable | Description                                          | Default                                                |
-| -------------------- | -------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
-| `pbs.loglevel`       | `PBS_LOGLEVEL`       | Log level (debug, info)                              | `info`                                                 |
-| `pbs.api.token`      | `PBS_API_TOKEN`      | API token to use for authentication                  |                                                        |
-| `pbs.api.token.name` | `PBS_API_TOKEN_NAME` | Name of the API token to use for authentication      | `pbs-exporter`                                         |
-| `pbs.endpoint`       | `PBS_ENDPOINT`       | Address of the Proxmox Backup Server                 | `http://localhost:8007` (if no parameter `target` set) |
-| `pbs.username`       | `PBS_USERNAME`       | Username to use for authentication                   | `root@pam`                                             |
-| `pbs.timeout`        | `PBS_TIMEOUT`        | Timeout for requests to Proxmox Backup Server        | `5s`                                                   |
-| `pbs.write-timeout`  | `PBS_WRITE_TIMEOUT`  | Maximum duration of a scrape (all requests to PBS)   | `10s`                                                  |
-| `pbs.insecure`       | `PBS_INSECURE`       | Disable TLS certificate verification                 | `false`                                                |
-| `pbs.metrics-path`   | `PBS_METRICS_PATH`   | Path under which to expose metrics                   | `/metrics`                                             |
-| `pbs.listen-address` | `PBS_LISTEN_ADDRESS` | Address to listen on for web interface and telemetry | `:10019`                                               |
-| `web.config.file`    | `PBS_WEB_CONFIG_FILE` | Path to a web configuration file enabling TLS or authentication (see below) |                                         |
+| Flag                 | Environment Variable  | Description                                                                 | Default                                                |
+| -------------------- | --------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `pbs.loglevel`       | `PBS_LOGLEVEL`        | Log level (debug, info)                                                     | `info`                                                 |
+| `pbs.api.token`      | `PBS_API_TOKEN`       | API token to use for authentication                                         |                                                        |
+| `pbs.api.token.name` | `PBS_API_TOKEN_NAME`  | Name of the API token to use for authentication                             | `pbs-exporter`                                         |
+| `pbs.endpoint`       | `PBS_ENDPOINT`        | Address of the Proxmox Backup Server                                        | `http://localhost:8007` (if no parameter `target` set) |
+| `pbs.username`       | `PBS_USERNAME`        | Username to use for authentication                                          | `root@pam`                                             |
+| `pbs.timeout`        | `PBS_TIMEOUT`         | Timeout for requests to Proxmox Backup Server                               | `5s`                                                   |
+| `pbs.write-timeout`  | `PBS_WRITE_TIMEOUT`   | Maximum duration of a scrape (all requests to PBS)                          | `10s`                                                  |
+| `pbs.insecure`       | `PBS_INSECURE`        | Disable TLS certificate verification                                        | `false`                                                |
+| `pbs.metrics-path`   | `PBS_METRICS_PATH`    | Path under which to expose metrics                                          | `/metrics`                                             |
+| `pbs.listen-address` | `PBS_LISTEN_ADDRESS`  | Address to listen on for web interface and telemetry                        | `:10019`                                               |
+| `web.config.file`    | `PBS_WEB_CONFIG_FILE` | Path to a web configuration file enabling TLS or authentication (see below) |                                                        |
 
 ### TLS and authentication
 
