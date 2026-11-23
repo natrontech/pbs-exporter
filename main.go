@@ -25,6 +25,14 @@ const versionApi = "/api2/json/version"
 const datastoreUsageApi = "/api2/json/status/datastore-usage"
 const datastoreApi = "/api2/json/admin/datastore"
 const nodeApi = "/api2/json/nodes"
+const verifyJobsApi = "/api2/json/admin/verify"
+
+// "sync-direction=all" also lists push jobs (PBS >= 3.3); without it PBS
+// lists pull jobs only. Older PBS versions reject the unknown parameter
+// with 400, which getJobMetrics logs and skips.
+const syncJobsApi = "/api2/json/admin/sync?sync-direction=all"
+const pruneJobsApi = "/api2/json/admin/prune"
+const gcJobsApi = "/api2/json/admin/gc"
 
 // These variables are set in build step
 var Version = "v0.0.0-dev.0"
@@ -109,6 +117,31 @@ var (
 		prometheus.BuildFQName(promNamespace, "", "snapshot_vm_last_verify"),
 		"The verify status of the last backup of a VM.",
 		[]string{"datastore", "namespace", "backup_type", "vm_id", "vm_name"}, nil,
+	)
+	job_running = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "job_running"),
+		"Whether the scheduled job is currently running (1) or finished (0). Absent if the job never ran; not exposed for gc jobs.",
+		[]string{"type", "id", "datastore"}, nil,
+	)
+	job_last_run_success = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "job_last_run_success"),
+		"Whether the last run of the scheduled job succeeded (1 = OK or warnings, 0 = error or unknown). Absent if the job never ran or is currently running.",
+		[]string{"type", "id", "datastore"}, nil,
+	)
+	job_last_run_start_timestamp_seconds = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "job_last_run_start_timestamp_seconds"),
+		"The start time of the last or current run of the scheduled job in unix seconds, parsed from the task upid.",
+		[]string{"type", "id", "datastore"}, nil,
+	)
+	job_last_run_end_timestamp_seconds = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "job_last_run_end_timestamp_seconds"),
+		"The end time of the last run of the scheduled job in unix seconds. Absent if the job never ran or is currently running.",
+		[]string{"type", "id", "datastore"}, nil,
+	)
+	job_next_run_timestamp_seconds = prometheus.NewDesc(
+		prometheus.BuildFQName(promNamespace, "", "job_next_run_timestamp_seconds"),
+		"The estimated next run of the scheduled job in unix seconds.",
+		[]string{"type", "id", "datastore"}, nil,
 	)
 	subscription_status = prometheus.NewDesc(
 		prometheus.BuildFQName(promNamespace, "", "host_subscription_status"),
@@ -246,6 +279,25 @@ type SnapshotResponse struct {
 	} `json:"data"`
 }
 
+// ScheduledJob is one entry of the admin verify, sync, prune and gc job
+// endpoints. PBS omits last-run-state and last-run-endtime while a job is
+// running (last-run-upid is still present then) or when it never ran, and
+// omits next-run for jobs without a schedule and for disabled prune jobs,
+// hence the pointers.
+type ScheduledJob struct {
+	ID             *string `json:"id"` // gc jobs have no id, the datastore identifies them
+	Store          string  `json:"store"`
+	LastRunState   *string `json:"last-run-state"`
+	LastRunEndtime *int64  `json:"last-run-endtime"`
+	NextRun        *int64  `json:"next-run"`
+	LastRunUpid    *string `json:"last-run-upid"`
+	Upid           *string `json:"upid"` // gc jobs expose the task upid as "upid"
+}
+
+type ScheduledJobsResponse struct {
+	Data []ScheduledJob `json:"data"`
+}
+
 type HostResponse struct {
 	Data struct {
 		CPU float64 `json:"cpu"`
@@ -311,6 +363,11 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- snapshot_vm_count
 	ch <- snapshot_vm_last_timestamp
 	ch <- snapshot_vm_last_verify
+	ch <- job_running
+	ch <- job_last_run_success
+	ch <- job_last_run_start_timestamp_seconds
+	ch <- job_last_run_end_timestamp_seconds
+	ch <- job_next_run_timestamp_seconds
 	ch <- subscription_info
 	ch <- subscription_status
 	ch <- subscription_due_timestamp_seconds
@@ -420,6 +477,11 @@ func (e *Exporter) collectFromAPI(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return err
 	}
+
+	// get scheduled job metrics; a failing job endpoint (e.g. a 404 for the
+	// gc endpoint on PBS older than 3.2) is logged and skipped, so the other
+	// metrics are still reported
+	e.getJobMetrics(ch)
 
 	return nil
 }
@@ -843,6 +905,156 @@ func (e *Exporter) getNamespaceMetric(datastore string, namespace string, ch cha
 	}
 
 	return nil
+}
+
+// getJobMetrics collects the state of all scheduled jobs (verify, sync,
+// prune, gc). A failing endpoint is logged and skipped, so the job types and
+// metrics the API token may still see are reported.
+func (e *Exporter) getJobMetrics(ch chan<- prometheus.Metric) {
+	jobApis := []struct {
+		jobType string
+		api     string
+	}{
+		{"verify", verifyJobsApi},
+		{"sync", syncJobsApi},
+		{"prune", pruneJobsApi},
+		{"gc", gcJobsApi},
+	}
+
+	for _, jobApi := range jobApis {
+		err := e.getJobsMetric(jobApi.jobType, jobApi.api, ch)
+		if err != nil {
+			log.Printf("ERROR: Failed to collect %s jobs, skip job metric: %s", jobApi.jobType, err)
+		}
+	}
+}
+
+func (e *Exporter) getJobsMetric(jobType string, jobsApi string, ch chan<- prometheus.Metric) error {
+	// debug
+	if *loglevel == "debug" {
+		log.Printf("DEBUG: --Job type %s", jobType)
+	}
+
+	req, err := http.NewRequest("GET", e.endpoint+jobsApi, nil)
+	if err != nil {
+		return err
+	}
+
+	// add Authorization header
+	req.Header.Set("Authorization", e.authorizationHeader)
+
+	// debug
+	if *loglevel == "debug" {
+		log.Printf("DEBUG: --Request URL: %s", req.URL)
+	}
+
+	// make request and show output
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err := resp.Body.Close(); err != nil {
+		log.Printf("Error closing response body: %v", err)
+	}
+	if err != nil {
+		return err
+	}
+
+	// check if status code is 200
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("ERROR: --Status code %d returned from endpoint: %s", resp.StatusCode, e.endpoint)
+	}
+
+	// parse json
+	var response ScheduledJobsResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return err
+	}
+
+	// for each job collect metrics
+	for _, job := range response.Data {
+		id := job.Store
+		if job.ID != nil {
+			id = *job.ID
+		}
+
+		// a last-run-upid without an end time means the job is currently
+		// running. gc jobs are excluded: they expose their task upid in a
+		// separate "upid" field which can also be a stale fallback after the
+		// task log was lost, reporting a finished job as running (see README)
+		if job.LastRunUpid != nil {
+			runningValue := 0.0
+			if job.LastRunEndtime == nil {
+				runningValue = 1.0
+			}
+			ch <- prometheus.MustNewConstMetric(
+				job_running, prometheus.GaugeValue, runningValue, jobType, id, job.Store,
+			)
+		}
+
+		// the start time of the last or current run is encoded in the task
+		// upid; gc jobs expose it as "upid", the others as "last-run-upid"
+		upid := job.LastRunUpid
+		if job.Upid != nil {
+			upid = job.Upid
+		}
+		if upid != nil {
+			starttime, err := parseUpidStarttime(*upid)
+			if err != nil {
+				log.Printf("ERROR: Failed to parse upid of %s job %s, skip last run start time: %s", jobType, id, err)
+			} else {
+				ch <- prometheus.MustNewConstMetric(
+					job_last_run_start_timestamp_seconds, prometheus.GaugeValue, float64(starttime), jobType, id, job.Store,
+				)
+			}
+		}
+
+		// the last-run-state is only set once a run finished: "OK" and
+		// "WARNINGS: N" count as success, every other state (free-text
+		// errors, "unknown") as failed
+		if job.LastRunState != nil {
+			success := 0.0
+			if *job.LastRunState == "OK" || strings.HasPrefix(*job.LastRunState, "WARNINGS: ") {
+				success = 1.0
+			}
+			ch <- prometheus.MustNewConstMetric(
+				job_last_run_success, prometheus.GaugeValue, success, jobType, id, job.Store,
+			)
+		}
+
+		if job.LastRunEndtime != nil {
+			ch <- prometheus.MustNewConstMetric(
+				job_last_run_end_timestamp_seconds, prometheus.GaugeValue, float64(*job.LastRunEndtime), jobType, id, job.Store,
+			)
+		}
+
+		if job.NextRun != nil {
+			ch <- prometheus.MustNewConstMetric(
+				job_next_run_timestamp_seconds, prometheus.GaugeValue, float64(*job.NextRun), jobType, id, job.Store,
+			)
+		}
+	}
+
+	return nil
+}
+
+// parseUpidStarttime extracts the task start time (unix seconds) from a PBS
+// task upid, whose format is
+// UPID:node:pid:pstart:task_id:starttime:worker_type:worker_id:auth_id:
+// with the fields encoded as hex (see UPID in proxmox-schema).
+func parseUpidStarttime(upid string) (int64, error) {
+	fields := strings.Split(upid, ":")
+	if len(fields) < 6 {
+		return 0, fmt.Errorf("upid %q has %d fields, want at least 6", upid, len(fields))
+	}
+	starttime, err := strconv.ParseInt(fields[5], 16, 64)
+	if err != nil {
+		return 0, fmt.Errorf("upid %q has no hex start time in field 6", upid)
+	}
+	return starttime, nil
 }
 
 // A PBS backup group is identified by type and ID together: ct/101 and
